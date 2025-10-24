@@ -1,29 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { ChevronsRight, Play, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronsRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import WordDetails from "./WordDetails";
-import {
-  categoryService,
-  type Category,
-  type SubCategory,
-  type AdvancedSearchResult,
-} from "@/services/api";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import Skeleton, { SkeletonTableRow } from "@/components/ui/skeleton";
+import MediaLoader from "@/components/ui/media-loader";
+import { categoryService, type SubCategory } from "@/services/api";
+import { useCategories } from "@/contexts/CategoriesContext";
+import SplashScreen from "./SplashScreen";
 
-interface MainContentProps {
-  selectedWordFromSearch?: AdvancedSearchResult | null;
-}
-
-const MainContent: React.FC<MainContentProps> = ({
-  selectedWordFromSearch,
-}) => {
-  const [categories, setCategories] = useState<Category[]>([]);
+const MainContent: React.FC = () => {
+  const navigate = useNavigate();
+  const { categories, loading, error } = useCategories();
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
-  const [loading, setLoading] = useState(true);
   const [subCategoriesLoading, setSubCategoriesLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedWord, setSelectedWord] = useState<SubCategory | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    type: "audio" | "video";
+    url: string;
+    filename: string;
+  } | null>(null);
 
   // Fetch sub-categories when category is selected
   const fetchSubCategories = async (categoryId: string) => {
@@ -33,42 +30,21 @@ const MainContent: React.FC<MainContentProps> = ({
       if (response.success) {
         setSubCategories(response.data);
       } else {
-        setError("Failed to fetch sub-categories");
+        console.error("Failed to fetch sub-categories");
       }
     } catch (err) {
-      setError("Error loading sub-categories. Please try again.");
-      console.error("Error fetching sub-categories:", err);
+      console.error("Error loading sub-categories. Please try again.", err);
     } finally {
       setSubCategoriesLoading(false);
     }
   };
 
-  // Fetch categories from API
+  // Set first category as active by default when categories are loaded
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await categoryService.getCategories();
-        if (response.success) {
-          setCategories(response.data);
-          // Set first category as active by default
-          if (response.data.length > 0) {
-            setSelectedCategory(response.data[0]._id);
-          }
-        } else {
-          setError("Failed to fetch categories");
-        }
-      } catch (err) {
-        setError("Error loading categories. Please try again.");
-        console.error("Error fetching categories:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    if (categories.length > 0 && !selectedCategory) {
+      setSelectedCategory(categories[0]._id);
+    }
+  }, [categories, selectedCategory]);
 
   // Fetch sub-categories when selected category changes
   useEffect(() => {
@@ -79,11 +55,10 @@ const MainContent: React.FC<MainContentProps> = ({
     }
   }, [selectedCategory]);
 
-  const [selectedMedia, setSelectedMedia] = useState<{
-    type: "audio" | "video";
-    url: string;
-    filename: string;
-  } | null>(null);
+  // Show splash screen while loading categories
+  if (loading) {
+    return <SplashScreen />;
+  }
 
   // Function to preview audio
   const handlePreview = async (
@@ -131,50 +106,6 @@ const MainContent: React.FC<MainContentProps> = ({
     }
   };
 
-  // Handle word selection for details page
-  const handleWordClick = (word: SubCategory) => {
-    setSelectedWord(word);
-  };
-
-  // Handle back navigation from details page
-  const handleBackToHome = () => {
-    setSelectedWord(null);
-  };
-
-  // Convert AdvancedSearchResult to SubCategory format
-  const convertSearchResultToSubCategory = (
-    searchResult: AdvancedSearchResult
-  ): SubCategory => {
-    return {
-      _id: searchResult._id,
-      name: searchResult.name,
-      chickasawAnalytical: searchResult.chickasawAnalytical,
-      language: searchResult.language || searchResult.chickasawAnalytical, // fallback to analytical if language not available
-      audioUrl: searchResult.mediaUrl,
-      category: searchResult.category,
-      mediaType: searchResult.mediaType,
-      videoUrl: searchResult.video?.url || null,
-      createdAt: searchResult.createdAt,
-      updatedAt: searchResult.updatedAt,
-      __v: searchResult.__v,
-    };
-  };
-
-  // Handle search result navigation
-  React.useEffect(() => {
-    if (selectedWordFromSearch) {
-      const convertedWord = convertSearchResultToSubCategory(
-        selectedWordFromSearch
-      );
-      setSelectedWord(convertedWord);
-    }
-  }, [selectedWordFromSearch]);
-
-  // If a word is selected, show the details page
-  if (selectedWord) {
-    return <WordDetails word={selectedWord} onBack={handleBackToHome} />;
-  }
-
   return (
     <div className="bg-white  min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -184,25 +115,27 @@ const MainContent: React.FC<MainContentProps> = ({
             <div className="flex justify-between pb-2 px-2 items-center">
               <div className="text-xl font-medium text-gray-800">Category</div>
               <Button
-                variant="ghost"
+                variant="none"
                 className="text-base font-medium hover:underline transition-colors p-0 h-auto"
                 style={{ color: "#D3191C" }}
+                onClick={() => navigate("/all-categories")}
               >
                 See All
                 <ChevronsRight className="w-4 h-4" />
               </Button>
             </div>
-            <Card className="bg-white shadow-none px-0 rounded-xl ">
+            <Card className="bg-white shadow-none py-1.5 px-0 rounded-xl ">
               <CardContent className="pt-0 px-3">
                 {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2
-                      className="w-6 h-6 animate-spin"
-                      style={{ color: "#D3191C" }}
-                    />
-                    <span className="ml-2 text-gray-600">
-                      Loading categories...
-                    </span>
+                  <div className="space-y-2">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div key={index} className="px-3 py-2">
+                        <Skeleton height="h-6" width="w-3/4" />
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-center py-4">
+                      <LoadingSpinner size="sm" text="Loading categories..." />
+                    </div>
                   </div>
                 ) : error ? (
                   <div className="text-center py-8">
@@ -231,20 +164,7 @@ const MainContent: React.FC<MainContentProps> = ({
                           : {}
                       }
                       onClick={() => setSelectedCategory(null)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-sm">All</span>
-                        <span
-                          className={`text-xs ${
-                            selectedCategory === null
-                              ? "text-white"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          All words
-                        </span>
-                      </div>
-                    </div>
+                    ></div>
 
                     {categories.map((category) => (
                       <div
@@ -296,7 +216,7 @@ const MainContent: React.FC<MainContentProps> = ({
               <CardContent className="pt-0">
                 {/* Table Header */}
                 <div className="grid grid-cols-4 gap-4 pb-3 border-b border-gray-200 mb-3">
-                  <div className="font-semibold text-gray-700 text-sm">
+                  <div className="font-semibold text-gray-700 text-sm pl-2">
                     Title
                   </div>
                   <div className="font-semibold text-gray-700 text-sm">
@@ -311,23 +231,22 @@ const MainContent: React.FC<MainContentProps> = ({
                 {/* Table Content */}
                 <div className="space-y-2">
                   {subCategoriesLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2
-                        className="w-6 h-6 animate-spin"
-                        style={{ color: "#D3191C" }}
-                      />
-                      <span className="ml-2 text-gray-600">
-                        Loading words...
-                      </span>
+                    <div className="space-y-2">
+                      {/* Show skeleton rows while loading */}
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <SkeletonTableRow key={index} />
+                      ))}
+                      <div className="flex items-center justify-center py-4">
+                        <LoadingSpinner size="sm" text="Loading words..." />
+                      </div>
                     </div>
                   ) : subCategories.length > 0 ? (
                     subCategories.map((subCategory) => (
                       <div
                         key={subCategory._id}
-                        className="grid grid-cols-4 gap-4 py-2 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                        onClick={() => handleWordClick(subCategory)}
+                        className="grid grid-cols-4 items-center gap-4 py-2 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                       >
-                        <div className="text-gray-800 font-medium text-sm">
+                        <div className="text-gray-800 font-medium text-sm pl-2">
                           {subCategory.name}
                         </div>
                         <div className="text-gray-700 text-sm">
@@ -336,7 +255,7 @@ const MainContent: React.FC<MainContentProps> = ({
                         <div className="text-gray-700 text-sm">
                           {subCategory.language}
                         </div>
-                        <div className="flex justify-end">
+                        <div className="flex justify-center">
                           <Button
                             size="icon"
                             className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
@@ -401,43 +320,20 @@ const MainContent: React.FC<MainContentProps> = ({
             <h2 className="text-lg font-bold mb-2">
               Preview: {selectedMedia.filename}
             </h2>
-            {selectedMedia.type === "audio" ? (
-              <audio
-                src={selectedMedia.url}
-                controls
-                autoPlay
-                className="w-full"
-                onError={(e) => {
-                  console.error("Audio load error:", e);
-                  const target = e.target as HTMLAudioElement;
-                  target.style.display = "none";
-                  const errorDiv = document.createElement("div");
-                  errorDiv.className = "text-red-600 text-center p-4";
-                  errorDiv.innerHTML = `
-                    <p>Unable to load audio file</p>
-                    <p class="text-sm text-gray-500 mt-2">URL: ${selectedMedia.url}</p>
-                    <p class="text-sm text-gray-500">This might be due to CORS restrictions or the file not being accessible.</p>
-                  `;
-                  target.parentNode?.insertBefore(errorDiv, target.nextSibling);
-                }}
-                onLoadStart={() => {
-                  console.log("Audio loading started:", selectedMedia.url);
-                }}
-                onCanPlay={() => {
-                  console.log("Audio can play:", selectedMedia.url);
-                }}
-              />
-            ) : (
-              <video
-                src={selectedMedia.url}
-                controls
-                autoPlay
-                className="w-full"
-                onError={(e) => {
-                  console.error("Video load error:", e);
-                }}
-              />
-            )}
+            <MediaLoader
+              src={selectedMedia.url}
+              type={selectedMedia.type}
+              autoPlay
+              onError={(error) => {
+                console.error("Media load error:", error);
+              }}
+              onLoadStart={() => {
+                console.log("Media loading started:", selectedMedia.url);
+              }}
+              onCanPlay={() => {
+                console.log("Media can play:", selectedMedia.url);
+              }}
+            />
 
             <button
               type="button"

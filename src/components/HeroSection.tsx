@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,13 +24,12 @@ interface HeroSectionProps {
   onCategoryClick: (category: AdvancedSearchResult) => void;
 }
 
-const HeroSection: React.FC<HeroSectionProps> = ({
-  onSearchResultClick,
-  onCategoryClick,
-}) => {
+const HeroSection: React.FC<HeroSectionProps> = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [apiResults, setApiResults] = useState<AdvancedSearchResult[]>([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{
     type: "audio" | "video";
     url: string;
@@ -43,9 +43,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   const performApiSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setApiResults([]);
+      setIsSearchLoading(false);
       return;
     }
 
+    setIsSearchLoading(true);
     try {
       const response = await searchService.advancedSearch(query, "all");
       if (response.success) {
@@ -56,6 +58,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
     } catch (error) {
       console.error("Error performing API search:", error);
       setApiResults([]);
+    } finally {
+      setIsSearchLoading(false);
     }
   }, []);
 
@@ -101,9 +105,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
     // Check result type and navigate accordingly
     if (word.type === "category") {
-      onCategoryClick(word);
+      // Encode the category name for URL
+      const encodedCategoryName = encodeURIComponent(word.name);
+      navigate(`/category/${word._id}/${encodedCategoryName}`);
     } else {
-      onSearchResultClick(word);
+      // Encode the word name for URL
+      const encodedWordName = encodeURIComponent(word.name);
+      navigate(`/word/${encodedWordName}`);
     }
   };
 
@@ -129,13 +137,19 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
   const handleSearchBlur = () => {
     // Delay hiding results to allow clicking on them
-    setTimeout(() => setShowResults(false), 200);
+    // Only hide if the popover is not open or if there's no search query
+    setTimeout(() => {
+      if (!showResults || searchQuery.trim() === "") {
+        setShowResults(false);
+      }
+    }, 200);
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
     setShowResults(false);
     setApiResults([]);
+    setIsSearchLoading(false);
     // Focus back to the search input after clearing
     if (searchInputRef.current) {
       searchInputRef.current.focus();
@@ -143,7 +157,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   };
 
   return (
-    <section className="relative h-[500px] overflow-visible">
+    <section className="relative py-9.5 overflow-visible">
       {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -164,17 +178,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 text-center">
         {/* Main Title */}
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 max-w-4xl leading-tight">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 max-w-4xl leading-tight">
           Listen and Learn to Chickasaw words
         </h1>
 
         {/* Subtitle */}
-        <p className="text-lg md:text-xl text-white mb-6 max-w-2xl opacity-95">
+        <p className="text-lg md:text-xl text-white mb-6  opacity-95">
           Learn Chickasaw words and phrases with clear audio.
         </p>
 
         {/* Search Bar */}
-        <div className="relative w-full max-w-2xl mb-6 z-50">
+        <div className="relative w-full max-w-2xl mb-6 z-50 search-container">
           <SearchResults
             results={searchResults}
             isVisible={showResults}
@@ -182,6 +196,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             onAudioPlay={handleAudioPlay}
             searchQuery={searchQuery}
             searchInputRef={searchInputRef}
+            isLoading={isSearchLoading}
           >
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-30">
@@ -212,13 +227,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
         {/* Category Buttons */}
         <div className="flex flex-wrap justify-center gap-2 max-w-4xl">
-          {recentSearches.slice(0, 5).map((item, index) => (
+          {recentSearches.slice(0, 6).map((item, index) => (
             <Button
               key={index}
-              className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+              className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full bg-[#FFFFFFCC]  hover:bg-gray-50 transition-colors duration-200 shadow-sm"
             >
               {item.name}
-            </Button>
+            </Button> 
           ))}
         </div>
       </div>

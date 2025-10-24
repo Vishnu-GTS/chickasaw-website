@@ -99,9 +99,10 @@ export interface AdvancedSearchResponse {
 // API service functions
 export const categoryService = {
     // Get all categories
-    getCategories: async (): Promise<CategoryListResponse> => {
+    getCategories: async (limit?: number): Promise<CategoryListResponse> => {
         try {
-            const response = await api.get<CategoryListResponse>('/category/list');
+            const params = limit ? `?limit=${limit}` : '';
+            const response = await api.get<CategoryListResponse>(`/category/list${params}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -124,9 +125,11 @@ export const categoryService = {
 // Advanced search service
 export const searchService = {
     // Advanced search with query and type parameters
-    advancedSearch: async (query: string, type: string = 'all'): Promise<AdvancedSearchResponse> => {
+    advancedSearch: async (query: string, type: string = 'all', signal?: AbortSignal): Promise<AdvancedSearchResponse> => {
         try {
-            const response = await api.get<AdvancedSearchResponse>(`/search/advanced?q=${encodeURIComponent(query)}&type=${type}`);
+            const response = await api.get<AdvancedSearchResponse>(`/search/advanced?q=${encodeURIComponent(query)}&type=${type}`, {
+                signal
+            });
             return response.data;
         } catch (error) {
             console.error('Error performing advanced search:', error);

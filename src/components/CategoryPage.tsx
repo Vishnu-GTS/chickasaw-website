@@ -1,28 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import { SkeletonTableRow } from "@/components/ui/skeleton";
+import MediaLoader from "@/components/ui/media-loader";
 import { categoryService, type SubCategory } from "@/services/api";
 import type { AdvancedSearchResult } from "@/services/api";
 import heroBg from "@/assets/hero_bg.png";
 
-interface CategoryPageProps {
-  category: AdvancedSearchResult;
-  onBack: () => void;
-  onWordClick: (word: AdvancedSearchResult) => void;
-}
-
-const CategoryPage: React.FC<CategoryPageProps> = ({
-  category,
-  onBack,
-  onWordClick,
-}) => {
+const CategoryPage: React.FC = () => {
+  const { categoryId, categoryName } = useParams<{
+    categoryId: string;
+    categoryName: string;
+  }>();
+  const navigate = useNavigate();
+  const [category, setCategory] = useState<AdvancedSearchResult | null>(null);
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,13 +24,52 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
     url: string;
     filename: string;
   } | null>(null);
-  const [audioError, setAudioError] = useState<string | null>(null);
+  const fetchedCategoryRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const fetchSubCategories = async () => {
+    const fetchCategoryAndSubCategories = async () => {
+      if (!categoryId) return;
+
+      // Prevent duplicate API calls for the same category
+      if (fetchedCategoryRef.current === categoryId) {
+        return;
+      }
+
       try {
         setLoading(true);
-        const response = await categoryService.getSubCategories(category._id);
+        fetchedCategoryRef.current = categoryId;
+
+        // Use category name from URL
+        const displayCategoryName = categoryName
+          ? decodeURIComponent(categoryName)
+          : "Category";
+
+        // Create category object with name from URL
+        const categoryFromUrl: AdvancedSearchResult = {
+          _id: categoryId,
+          name: displayCategoryName,
+          chickasawAnalytical: "",
+          language: "",
+          mediaUrl: "",
+          category: {
+            _id: categoryId,
+            name: displayCategoryName,
+            createdAt: "",
+            updatedAt: "",
+            __v: 0,
+          },
+          mediaType: "",
+          type: "category",
+          createdAt: "",
+          updatedAt: "",
+          __v: 0,
+          audio: undefined,
+          video: undefined,
+        };
+        setCategory(categoryFromUrl);
+
+        // Fetch sub-categories
+        const response = await categoryService.getSubCategories(categoryId);
         if (response.success) {
           setSubCategories(response.data);
         } else {
@@ -46,72 +78,65 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
       } catch (err) {
         console.error("Error fetching sub-categories:", err);
         setError("Failed to load category items");
+        fetchedCategoryRef.current = null; // Reset on error to allow retry
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSubCategories();
-  }, [category._id]);
+    fetchCategoryAndSubCategories();
+  }, [categoryId, categoryName]);
 
-  const handleAudioPlay = (audioUrl: string, filename: string) => {
-    // Construct full URL if it's a relative path
-    const fullUrl = audioUrl.startsWith("http")
-      ? audioUrl
-      : `https://chickasaw-admin-one.vercel.app${audioUrl}`;
+  const handleAudioPlay = async (audioUrl: string, filename: string) => {
+    try {
+      // Test if the URL is accessible
+      const response = await fetch(audioUrl, { method: "HEAD" });
+      if (!response.ok) {
+        console.error(
+          "Audio URL not accessible:",
+          response.status,
+          response.statusText
+        );
+        // Try alternative URL format
+        const fileId = audioUrl.split("/").pop();
+        const alternativeUrl = `https://chickasaw-admin-one.vercel.app/api/gridfs/${fileId}`;
+        console.log("Trying alternative URL:", alternativeUrl);
+        setSelectedMedia({
+          type: "audio",
+          url: alternativeUrl,
+          filename,
+        });
+        return;
+      }
 
-    setSelectedMedia({
-      type: "audio",
-      url: fullUrl,
-      filename: filename,
-    });
-    setAudioError(null);
+      setSelectedMedia({
+        type: "audio",
+        url: audioUrl,
+        filename,
+      });
+    } catch (error) {
+      console.error("Error testing audio URL:", error);
+      // Try alternative URL format
+      const fileId = audioUrl.split("/").pop();
+      const alternativeUrl = `https://chickasaw-admin-one.vercel.app/api/gridfs/${fileId}`;
+      console.log("Trying alternative URL:", alternativeUrl);
+      setSelectedMedia({
+        type: "audio",
+        url: alternativeUrl,
+        filename,
+      });
+    }
   };
 
   const handleWordClick = (subCategory: SubCategory) => {
-    // Convert SubCategory to AdvancedSearchResult format
-    const searchResult: AdvancedSearchResult = {
-      _id: subCategory._id,
-      name: subCategory.name,
-      chickasawAnalytical: subCategory.chickasawAnalytical,
-      language: subCategory.language,
-      mediaUrl: subCategory.audioUrl,
-      category: subCategory.category,
-      mediaType: subCategory.mediaType,
-      type: "word",
-      createdAt: subCategory.createdAt,
-      updatedAt: subCategory.updatedAt,
-      __v: subCategory.__v,
-      audio: {
-        id: subCategory._id,
-        filename: subCategory.name,
-        contentType: "audio/mpeg",
-        url: subCategory.audioUrl,
-      },
-      video: subCategory.videoUrl
-        ? {
-            id: subCategory._id,
-            filename: subCategory.name,
-            contentType: "video/mp4",
-            url: subCategory.videoUrl,
-          }
-        : null,
-    };
-
-    onWordClick(searchResult);
+    // Encode the word name for URL
+    const encodedWordName = encodeURIComponent(subCategory.name);
+    navigate(`/word/${encodedWordName}`);
   };
 
-  if (loading) {
-    return (
-      <div className="bg-white min-h-screen">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-gray-600">Loading...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleBackToHome = () => {
+    navigate(-1);
+  };
 
   if (error) {
     return (
@@ -148,74 +173,105 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
         {/* Category Title */}
         <div className="relative z-10 flex items-center justify-center h-full">
           <h1 className="text-4xl md:text-5xl font-bold text-white text-center">
-            {category.name}
+            {category?.name || "Category"}
           </h1>
         </div>
       </section>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
-        <button
-          onClick={onBack}
+        <Button
+          variant="ghost"
+          onClick={handleBackToHome}
           className="flex items-center text-sm font-medium mb-8 transition-colors duration-200 hover:underline"
           style={{ color: "#D3191C" }}
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to List
-        </button>
+        </Button>
 
         {/* Table Container */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                  Analytical
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 uppercase tracking-wider">
-                  Humes
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {subCategories.map((item) => (
-                <tr
-                  key={item._id}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-                  onClick={() => handleWordClick(item)}
-                >
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    {item.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {item.chickasawAnalytical}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 flex items-center">
-                    <span className="mr-2">{item.language}</span>
-                    {item.audioUrl && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAudioPlay(item.audioUrl, item.name);
-                        }}
-                        className="flex items-center justify-center w-6 h-6 rounded-full transition-all duration-200 hover:scale-110 shadow-sm"
-                        style={{ backgroundColor: "#D3191C" }}
-                      >
-                        <Play className="w-3 h-3 text-white ml-0.5" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden ">
+          <div className="p-6">
+            {/* Table Header */}
+            <div className="grid grid-cols-4 gap-4 pb-3 border-b border-gray-200 mb-3">
+              <div className="font-semibold text-gray-700 text-sm pl-2">
+                Title
+              </div>
+              <div className="font-semibold text-gray-700 text-sm">
+                Analytical
+              </div>
+              <div className="font-semibold text-gray-700 text-sm">Humes</div>
+              <div className="font-semibold text-gray-700 text-sm"></div>
+            </div>
+
+            {/* Table Content */}
+            {loading ? (
+              <div className="space-y-2">
+                {/* Show skeleton rows while loading */}
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <SkeletonTableRow key={index} />
+                ))}
+                <div className="flex items-center justify-center py-4">
+                  <LoadingSpinner size="md" text="Loading category items..." />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {subCategories.map((item) => (
+                  <div
+                    key={item._id}
+                    className="grid grid-cols-4 gap-4 py-2 mb-0 items-center border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                    onClick={() => handleWordClick(item)}
+                  >
+                    <div className="text-gray-800 pl-2 font-medium text-sm">
+                      {item.name}
+                    </div>
+                    <div className="text-gray-700 text-sm">
+                      {item.chickasawAnalytical}
+                    </div>
+                    <div className="text-gray-700 text-sm">{item.language}</div>
+                    <div className="flex justify-center">
+                      {item.audioUrl && (
+                        <Button
+                          size="icon"
+                          className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
+                          style={{
+                            backgroundColor: "#F7F7F7",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            (
+                              e.target as HTMLButtonElement
+                            ).style.backgroundColor = "#F9FAFB";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            (
+                              e.target as HTMLButtonElement
+                            ).style.backgroundColor = "#F7F7F7";
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAudioPlay(item.audioUrl, item.name);
+                          }}
+                        >
+                          <Play
+                            className="w-4 h-4 ml-0.5 fill-current"
+                            style={{ color: "#CC0000" }}
+                          />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {subCategories.length === 0 && (
+        {!loading && subCategories.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">
               No items found in this category.
@@ -224,91 +280,50 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
         )}
       </div>
 
-      {/* Media Preview Dialog */}
-      <Dialog
-        open={!!selectedMedia}
-        onOpenChange={(open) => {
-          if (!open) {
+      {/* Media Preview Modal */}
+      {selectedMedia && (
+        <div
+          onClick={() => {
             setSelectedMedia(null);
-            setAudioError(null);
-          }
-        }}
-      >
-        <DialogContent className="max-w-lg" showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>Preview: {selectedMedia?.filename}</DialogTitle>
-          </DialogHeader>
-          {selectedMedia && (
-            <div className="mt-4">
-              {selectedMedia.type === "audio" ? (
-                audioError ? (
-                  <div className="text-red-600 text-center p-4">
-                    <p>Unable to load audio file</p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      URL: {selectedMedia.url}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      This might be due to CORS restrictions or the file not
-                      being accessible.
-                    </p>
-                  </div>
-                ) : (
-                  <audio
-                    src={selectedMedia.url}
-                    controls
-                    autoPlay
-                    className="w-full"
-                    onError={(e) => {
-                      console.error("Audio load error:", e);
-                      setAudioError("Failed to load audio file");
-                    }}
-                    onLoadStart={() => {
-                      console.log("Audio loading started:", selectedMedia.url);
-                    }}
-                    onCanPlay={() => {
-                      console.log("Audio can play:", selectedMedia.url);
-                    }}
-                  />
-                )
-              ) : (
-                <video
-                  src={selectedMedia.url}
-                  controls
-                  autoPlay
-                  className="w-full"
-                  onError={(e) => {
-                    console.error("Video load error:", e);
-                  }}
-                />
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button
+          }}
+          className="fixed inset-0 bg-black/50 bg-opacity-20 flex items-center justify-center z-50"
+        >
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="bg-white p-4 rounded-lg max-w-lg w-full mx-4"
+          >
+            <h2 className="text-lg font-bold mb-2">
+              Preview: {selectedMedia.filename}
+            </h2>
+            <MediaLoader
+              src={selectedMedia.url}
+              type={selectedMedia.type}
+              autoPlay
+              onError={(error) => {
+                console.error("Media load error:", error);
+              }}
+              onLoadStart={() => {
+                console.log("Media loading started:", selectedMedia.url);
+              }}
+              onCanPlay={() => {
+                console.log("Media can play:", selectedMedia.url);
+              }}
+            />
+
+            <button
               type="button"
-              className="text-white px-4 py-2 rounded"
-              style={{
-                backgroundColor: "rgb(211, 25, 28)",
-                borderColor: "rgb(211, 25, 28)",
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "rgb(191, 17, 20)";
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "rgb(211, 25, 28)";
-              }}
+              className="hover:cursor-pointer mt-4 bg-red-500 text-white px-4 py-2 rounded"
               onClick={() => {
                 setSelectedMedia(null);
-                setAudioError(null);
               }}
             >
               Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

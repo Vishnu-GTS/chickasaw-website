@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import Skeleton from "@/components/ui/skeleton";
+import MediaLoader from "@/components/ui/media-loader";
 import SearchResults from "./SearchResults";
 import type { SubCategory } from "@/services/api";
 import { searchService, type AdvancedSearchResult } from "@/services/api";
@@ -19,30 +23,199 @@ import {
 } from "@/lib/cookies";
 import heroBg from "@/assets/hero_bg.png";
 
-interface WordDetailsProps {
-  word: SubCategory;
-  onBack: () => void;
-  onSearchResultClick?: (word: AdvancedSearchResult) => void;
-  onCategoryClick?: (category: AdvancedSearchResult) => void;
-}
+const WordDetails: React.FC = () => {
+  const { wordName } = useParams<{
+    wordName: string;
+  }>();
+  const navigate = useNavigate();
 
-const WordDetails: React.FC<WordDetailsProps> = ({
-  word,
-  onBack,
-  onSearchResultClick,
-  onCategoryClick,
-}) => {
+  // State management
+  const [word, setWord] = useState<SubCategory | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<{
     type: "audio" | "video";
     url: string;
     filename: string;
   } | null>(null);
-  const [audioError, setAudioError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [apiResults, setApiResults] = useState<AdvancedSearchResult[]>([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Refs for optimization
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const isFetchingWordDetails = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const searchAbortControllerRef = useRef<AbortController | null>(null);
+  const isInitialLoad = useRef(true);
+
+  // Fetch word details
+  useEffect(() => {
+    const fetchWordDetails = async () => {
+      if (!wordName || isFetchingWordDetails.current) return;
+
+      // Cancel any ongoing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create new AbortController for this request
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      try {
+        isFetchingWordDetails.current = true;
+        setLoading(true);
+        setError(null);
+
+        // Use word name from URL
+        const displayWordName = wordName
+          ? decodeURIComponent(wordName)
+          : "Word";
+
+        // Try to get word details from API
+        try {
+          console.log("Fetching word details for:", wordName);
+          const response = await searchService.advancedSearch(
+            wordName,
+            "all",
+            abortController.signal
+          );
+          console.log("API response:", response);
+
+          if (response.success && response.data.results.length > 0) {
+            const wordResult = response.data.results[0];
+            // Use API data but keep the name from URL
+            const wordFromApi: SubCategory = {
+              _id: wordResult._id,
+              name: displayWordName, // Keep name from URL
+              chickasawAnalytical: wordResult.chickasawAnalytical || "",
+              language: wordResult.language || "",
+              audioUrl: wordResult.mediaUrl || "",
+              videoUrl: wordResult.video?.url || null,
+              category: wordResult.category,
+              mediaType: wordResult.mediaType || "",
+              createdAt: wordResult.createdAt || "",
+              updatedAt: wordResult.updatedAt || "",
+              __v: wordResult.__v || 0,
+            };
+            setWord(wordFromApi);
+          } else {
+            // No API results found, create word with name from URL only
+            const wordFromUrl: SubCategory = {
+              _id: "",
+              name: displayWordName,
+              chickasawAnalytical: "",
+              language: "",
+              audioUrl: "",
+              videoUrl: "",
+              category: {
+                _id: "",
+                name: "",
+                createdAt: "",
+                updatedAt: "",
+                __v: 0,
+              },
+              mediaType: "",
+              createdAt: "",
+              updatedAt: "",
+              __v: 0,
+            };
+            setWord(wordFromUrl);
+          }
+        } catch (apiError) {
+          console.error("API call failed, showing word from URL:", apiError);
+          // API failed, but we still show the word name from URL
+          const wordFromUrl: SubCategory = {
+            _id: "",
+            name: displayWordName,
+            chickasawAnalytical: "",
+            language: "",
+            audioUrl: "",
+            videoUrl: "",
+            category: {
+              _id: "",
+              name: "",
+              createdAt: "",
+              updatedAt: "",
+              __v: 0,
+            },
+            mediaType: "",
+            createdAt: "",
+            updatedAt: "",
+            __v: 0,
+          };
+          setWord(wordFromUrl);
+          // Don't set error state for API failures - just show the word name
+          console.log("Showing word from URL without API data");
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          console.error("Error fetching word details:", err);
+
+          // Even if there's an error, try to show the word name from URL
+          const wordFromUrl: SubCategory = {
+            _id: "",
+            name: wordName ? decodeURIComponent(wordName) : "Word",
+            chickasawAnalytical: "",
+            language: "",
+            audioUrl: "",
+            videoUrl: "",
+            category: {
+              _id: "",
+              name: "",
+              createdAt: "",
+              updatedAt: "",
+              __v: 0,
+            },
+            mediaType: "",
+            createdAt: "",
+            updatedAt: "",
+            __v: 0,
+          };
+          setWord(wordFromUrl);
+
+          // Only set error for critical failures
+          if (
+            err.message.includes("Network Error") ||
+            err.message.includes("timeout")
+          ) {
+            setError(
+              "Network error. Please check your connection and try again."
+            );
+          } else if (err.message.includes("404")) {
+            setError("Word not found. Please try a different word.");
+          } else if (err.message.includes("500")) {
+            setError("Server error. Please try again later.");
+          } else {
+            // For other errors, just log them but don't show error to user
+            console.warn(
+              "Non-critical error, showing word without full details:",
+              err.message
+            );
+          }
+        }
+      } finally {
+        setLoading(false);
+        isFetchingWordDetails.current = false;
+        isInitialLoad.current = false;
+      }
+    };
+
+    fetchWordDetails();
+
+    // Cleanup function
+    return () => {
+      isFetchingWordDetails.current = false;
+      isInitialLoad.current = true;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, [wordName]);
 
   const handleAudioPlay = (audioUrl: string, filename: string) => {
     // Construct full URL if it's a relative path
@@ -55,26 +228,45 @@ const WordDetails: React.FC<WordDetailsProps> = ({
       url: fullUrl,
       filename: filename,
     });
-    setAudioError(null); // Clear any previous errors
   };
 
   // Perform API search
   const performApiSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setApiResults([]);
+      setIsSearchLoading(false);
       return;
     }
 
+    // Cancel any ongoing search request
+    if (searchAbortControllerRef.current) {
+      searchAbortControllerRef.current.abort();
+    }
+
+    // Create new AbortController for this search request
+    const searchAbortController = new AbortController();
+    searchAbortControllerRef.current = searchAbortController;
+
+    setIsSearchLoading(true);
     try {
-      const response = await searchService.advancedSearch(query, "all");
+      const response = await searchService.advancedSearch(
+        query,
+        "all",
+        searchAbortController.signal
+      );
       if (response.success) {
         setApiResults(response.data.results);
       } else {
         setApiResults([]);
       }
     } catch (error) {
-      console.error("Error performing API search:", error);
-      setApiResults([]);
+      // Don't log error if it's an abort error
+      if (error instanceof Error && error.name !== "AbortError") {
+        console.error("Error performing API search:", error);
+        setApiResults([]);
+      }
+    } finally {
+      setIsSearchLoading(false);
     }
   }, []);
 
@@ -83,74 +275,133 @@ const WordDetails: React.FC<WordDetailsProps> = ({
 
   // Debounced API search effect
   useEffect(() => {
+    // Don't perform search if we're still loading word details, if there's no search query, or if this is the initial load
+    if (loading || !searchQuery.trim() || isInitialLoad.current) {
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
       performApiSearch(searchQuery);
     }, 300);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, performApiSearch]);
+    return () => {
+      clearTimeout(timeoutId);
+      // Cancel any ongoing search request when effect cleans up
+      if (searchAbortControllerRef.current) {
+        searchAbortControllerRef.current.abort();
+        searchAbortControllerRef.current = null;
+      }
+    };
+  }, [searchQuery, performApiSearch, loading]);
 
   // Load recent searches on component mount
   useEffect(() => {
     setRecentSearches(getSearchHistory());
   }, []);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    setShowResults(value.length > 0);
-  };
+  // Event handlers
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setSearchQuery(value);
+      setShowResults(value.length > 0);
+    },
+    []
+  );
 
-  const handleResultClick = (word: AdvancedSearchResult) => {
-    setSearchQuery(word.name);
-    setShowResults(false);
+  const handleResultClick = useCallback(
+    (word: AdvancedSearchResult) => {
+      setSearchQuery(word.name);
+      setShowResults(false);
 
-    // Save to search history
-    addToSearchHistory({
-      id: word._id,
-      name: word.name,
-      chickasawAnalytical: word.chickasawAnalytical,
-      language: word.language,
-      mediaUrl: word.mediaUrl,
-      category: word.category,
-    });
+      // Save to search history
+      addToSearchHistory({
+        id: word._id,
+        name: word.name,
+        chickasawAnalytical: word.chickasawAnalytical,
+        language: word.language,
+        mediaUrl: word.mediaUrl,
+        category: word.category,
+      });
 
-    // Update recent searches state
-    setRecentSearches(getSearchHistory());
+      // Update recent searches state
+      setRecentSearches(getSearchHistory());
 
-    // Check result type and navigate accordingly
-    if (word.type === "category" && onCategoryClick) {
-      onCategoryClick(word);
-    } else if (onSearchResultClick) {
-      onSearchResultClick(word);
-    }
-  };
+      // Check result type and navigate accordingly
+      if (word.type === "category") {
+        const encodedCategoryName = encodeURIComponent(word.name);
+        navigate(`/category/${word._id}/${encodedCategoryName}`);
+      } else {
+        const encodedWordName = encodeURIComponent(word.name);
+        navigate(`/word/${word._id}/${encodedWordName}`);
+      }
+    },
+    [navigate]
+  );
 
-  const handleSearchFocus = () => {
+  const handleBackToHome = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+
+  const handleSearchFocus = useCallback(() => {
     if (searchQuery.length > 0) {
       setShowResults(true);
     }
-  };
+  }, [searchQuery]);
 
-  const handleSearchBlur = () => {
+  const handleSearchBlur = useCallback(() => {
     // Delay hiding results to allow clicking on them
-    setTimeout(() => setShowResults(false), 200);
-  };
+    setTimeout(() => {
+      if (!showResults || searchQuery.trim() === "") {
+        setShowResults(false);
+      }
+    }, 200);
+  }, [showResults, searchQuery]);
 
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchQuery("");
     setShowResults(false);
     setApiResults([]);
+    setIsSearchLoading(false);
     // Focus back to the search input after clearing
     if (searchInputRef.current) {
       searchInputRef.current.focus();
     }
-  };
+  }, []);
+
+  // Remove the early return for loading state - we'll show loader inline
+
+  if (error) {
+    return (
+      <div className="bg-white min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col items-center justify-center h-64 space-y-4">
+            <div className="text-lg text-red-600 text-center">{error}</div>
+            <Button
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                // Trigger a re-fetch by updating the wordName dependency
+                window.location.reload();
+              }}
+              className="text-white px-6 py-2 rounded-lg"
+              style={{
+                backgroundColor: "#CC0000",
+                borderColor: "#CC0000",
+              }}
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section with Search */}
-      <section className="relative h-[500px] overflow-visible">
+      <section className="relative  py-9.5 overflow-visible">
         {/* Background Image */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -171,17 +422,16 @@ const WordDetails: React.FC<WordDetailsProps> = ({
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 text-center">
           {/* Main Title */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 max-w-4xl leading-tight">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 max-w-4xl leading-tight">
             Listen and Learn to Chickasaw words
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-white mb-6 max-w-2xl opacity-95">
+          <p className="text-lg md:text-xl text-white mb-6  opacity-95">
             Learn Chickasaw words and phrases with clear audio.
           </p>
-
           {/* Search Bar */}
-          <div className="relative w-full max-w-2xl mb-6 z-50">
+          <div className="relative w-full max-w-2xl mb-6 z-50 search-container">
             <SearchResults
               results={searchResults}
               isVisible={showResults}
@@ -189,6 +439,7 @@ const WordDetails: React.FC<WordDetailsProps> = ({
               onAudioPlay={handleAudioPlay}
               searchQuery={searchQuery}
               searchInputRef={searchInputRef}
+              isLoading={isSearchLoading}
             >
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none z-30">
@@ -233,89 +484,138 @@ const WordDetails: React.FC<WordDetailsProps> = ({
 
       {/* Current Word Section */}
       <div className="bg-white py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl min-h-screen mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
-          <button
-            onClick={onBack}
+          <Button
+            variant="ghost"
+            onClick={handleBackToHome}
             className="flex items-center text-sm font-medium mb-8 transition-colors duration-200 hover:underline"
             style={{ color: "#D3191C" }}
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to home
-          </button>
+          </Button>
 
-          {/* Current Word Title */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {word.name}
-            </h2>
-          </div>
-
-          {/* Word Details */}
-          <div className="bg-white">
-            <div className="flex flex-col space-y-6 mb-8">
-              <div className="flex items-baseline">
-                <span className="text-lg text-black font-semibold mr-3">
-                  Analytical:
-                </span>
-                <span className="text-lg text-black font-medium">
-                  {word.chickasawAnalytical}
-                </span>
+          {/* Loading State for Word Details */}
+          {loading ? (
+            <div className="space-y-6">
+              {/* Word Title Skeleton */}
+              <div className="mb-4">
+                <Skeleton height="h-10" width="w-64" />
               </div>
 
-              <div className="flex items-baseline">
-                <span className="text-lg text-black font-semibold mr-3">
-                  Humes:
-                </span>
-                <span className="text-lg text-black font-medium">
-                  {word.language}
-                </span>
+              {/* Word Details Skeleton */}
+              <div className="bg-white">
+                <div className="flex flex-wrap gap-8 mb-8">
+                  <div className="flex items-baseline">
+                    <Skeleton height="h-6" width="w-24" />
+                    <Skeleton height="h-6" width="w-32" className="ml-2" />
+                  </div>
+                  <div className="flex items-baseline">
+                    <Skeleton height="h-6" width="w-20" />
+                    <Skeleton height="h-6" width="w-28" className="ml-2" />
+                  </div>
+                </div>
+
+                {/* Play Button Skeleton */}
+                <div className="mb-8">
+                  <Skeleton height="h-12" width="w-32" />
+                </div>
+
+                {/* Note Skeleton */}
+                <div className="mt-8 p-4 bg-gray-50 rounded-lg border-l-4 border-gray-300">
+                  <Skeleton height="h-4" width="w-full" />
+                </div>
               </div>
             </div>
-
-            {/* Audio Play Button */}
-            {word.audioUrl && (
-              <div className="mb-8">
-                <Button
-                  onClick={() => handleAudioPlay(word.audioUrl, word.name)}
-                  className="text-white px-10 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl"
-                  style={{
-                    backgroundColor: "#CC0000",
-                    borderColor: "#CC0000",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      "#B30000";
-                    (e.target as HTMLButtonElement).style.transform =
-                      "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLButtonElement).style.backgroundColor =
-                      "#CC0000";
-                    (e.target as HTMLButtonElement).style.transform =
-                      "translateY(0)";
-                  }}
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                  </svg>
-                  Play
-                </Button>
+          ) : (
+            <>
+              {/* Current Word Title */}
+              <div className=" mb-4">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  {word?.name || "Word"}
+                </h2>
               </div>
-            )}
 
-            {/* Note */}
-            <div className="mt-8 p-4 bg-gray-50 rounded-lg border-l-4 border-gray-300">
-              <p className="text-base text-gray-700 font-normal">
-                <strong className="text-gray-900">Note:</strong> Please click
-                the play button to play the audio.
-              </p>
-            </div>
-          </div>
+              {/* Word Details */}
+              <div className="bg-white">
+                <div className="flex flex-wrap gap-8 mb-8">
+                  <div className="flex items-baseline">
+                    <span className="text-lg text-black font-semibold mr-1.5">
+                      Analytical:
+                    </span>
+                    {word?.chickasawAnalytical ? (
+                      <span className="text-lg text-black font-medium">
+                        {word.chickasawAnalytical}
+                      </span>
+                    ) : (
+                      <Skeleton height="h-6" width="w-32" />
+                    )}
+                  </div>
+
+                  <div className="flex items-baseline">
+                    <span className="text-lg text-black font-semibold mr-1.5">
+                      Humes:
+                    </span>
+                    {word?.language ? (
+                      <span className="text-lg text-black font-medium">
+                        {word.language}
+                      </span>
+                    ) : (
+                      <Skeleton height="h-6" width="w-28" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Audio Play Button */}
+                {word?.audioUrl ? (
+                  <div className="mb-8">
+                    <Button
+                      onClick={() => handleAudioPlay(word.audioUrl, word.name)}
+                      className="text-white px-10 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 hover:shadow-xl"
+                      style={{
+                        backgroundColor: "#CC0000",
+                        borderColor: "#CC0000",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor =
+                          "#B30000";
+                        (e.target as HTMLButtonElement).style.transform =
+                          "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor =
+                          "#CC0000";
+                        (e.target as HTMLButtonElement).style.transform =
+                          "translateY(0)";
+                      }}
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                      Play
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mb-8">
+                    <Skeleton height="h-12" width="w-32" />
+                  </div>
+                )}
+
+                {/* Note */}
+                <div className="mt-8 p-4 bg-gray-50 rounded-lg border-l-4 border-gray-300">
+                  <p className="text-base text-gray-700 font-normal">
+                    <strong className="text-gray-900">Note:</strong> Please
+                    click the play button to play the audio.
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -325,7 +625,6 @@ const WordDetails: React.FC<WordDetailsProps> = ({
         onOpenChange={(open) => {
           if (!open) {
             setSelectedMedia(null);
-            setAudioError(null);
           }
         }}
       >
@@ -335,47 +634,20 @@ const WordDetails: React.FC<WordDetailsProps> = ({
           </DialogHeader>
           {selectedMedia && (
             <div className="mt-4">
-              {selectedMedia.type === "audio" ? (
-                audioError ? (
-                  <div className="text-red-600 text-center p-4">
-                    <p>Unable to load audio file</p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      URL: {selectedMedia.url}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      This might be due to CORS restrictions or the file not
-                      being accessible.
-                    </p>
-                  </div>
-                ) : (
-                  <audio
-                    src={selectedMedia.url}
-                    controls
-                    autoPlay
-                    className="w-full"
-                    onError={(e) => {
-                      console.error("Audio load error:", e);
-                      setAudioError("Failed to load audio file");
-                    }}
-                    onLoadStart={() => {
-                      console.log("Audio loading started:", selectedMedia.url);
-                    }}
-                    onCanPlay={() => {
-                      console.log("Audio can play:", selectedMedia.url);
-                    }}
-                  />
-                )
-              ) : (
-                <video
-                  src={selectedMedia.url}
-                  controls
-                  autoPlay
-                  className="w-full"
-                  onError={(e) => {
-                    console.error("Video load error:", e);
-                  }}
-                />
-              )}
+              <MediaLoader
+                src={selectedMedia.url}
+                type={selectedMedia.type}
+                autoPlay
+                onError={(error) => {
+                  console.error("Media load error:", error);
+                }}
+                onLoadStart={() => {
+                  console.log("Media loading started:", selectedMedia.url);
+                }}
+                onCanPlay={() => {
+                  console.log("Media can play:", selectedMedia.url);
+                }}
+              />
             </div>
           )}
           <DialogFooter>
@@ -394,10 +666,7 @@ const WordDetails: React.FC<WordDetailsProps> = ({
                 (e.target as HTMLButtonElement).style.backgroundColor =
                   "rgb(211, 25, 28)";
               }}
-              onClick={() => {
-                setSelectedMedia(null);
-                setAudioError(null);
-              }}
+              onClick={() => setSelectedMedia(null)}
             >
               Close
             </Button>
