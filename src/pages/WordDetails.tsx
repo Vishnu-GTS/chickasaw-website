@@ -37,6 +37,8 @@ const WordDetails: React.FC = () => {
     type: "audio" | "video";
     url: string;
     filename: string;
+    analytical?: string;
+    humes?: string;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -217,7 +219,12 @@ const WordDetails: React.FC = () => {
     };
   }, [wordName]);
 
-  const handleAudioPlay = (audioUrl: string, filename: string) => {
+  const handleAudioPlay = (
+    audioUrl: string,
+    filename: string,
+    analytical?: string,
+    humes?: string
+  ) => {
     // Construct full URL if it's a relative path
     const fullUrl = audioUrl.startsWith("http")
       ? audioUrl
@@ -227,6 +234,8 @@ const WordDetails: React.FC = () => {
       type: "audio",
       url: fullUrl,
       filename: filename,
+      analytical,
+      humes,
     });
   };
 
@@ -571,7 +580,14 @@ const WordDetails: React.FC = () => {
                 {word?.audioUrl ? (
                   <div className="mb-8">
                     <Button
-                      onClick={() => handleAudioPlay(word.audioUrl, word.name)}
+                      onClick={() =>
+                        handleAudioPlay(
+                          word.audioUrl,
+                          word.name,
+                          word.chickasawAnalytical,
+                          word.language
+                        )
+                      }
                       className="text-white px-10 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 hover:shadow-xl"
                       style={{
                         backgroundColor: "#CC0000",
@@ -630,10 +646,34 @@ const WordDetails: React.FC = () => {
       >
         <DialogContent className="max-w-lg" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Preview: {selectedMedia?.filename}</DialogTitle>
+            <DialogTitle>Word: {selectedMedia?.filename}</DialogTitle>
           </DialogHeader>
           {selectedMedia && (
             <div className="mt-4">
+              {/* Analytical and Humes Text */}
+              <div className="mb-4 space-y-2">
+                {selectedMedia.analytical && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Analytical:
+                    </span>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {selectedMedia.analytical}
+                    </p>
+                  </div>
+                )}
+                {selectedMedia.humes && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Humes:
+                    </span>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {selectedMedia.humes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <MediaLoader
                 src={selectedMedia.url}
                 type={selectedMedia.type}

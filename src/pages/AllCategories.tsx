@@ -35,6 +35,8 @@ const AllCategoriesContent: React.FC = () => {
     type: "audio" | "video";
     url: string;
     filename: string;
+    analytical?: string;
+    humes?: string;
   } | null>(null);
   const navigate = useNavigate();
   const searchInputRef = React.useRef<HTMLInputElement>(null);
@@ -111,7 +113,12 @@ const AllCategoriesContent: React.FC = () => {
     }
   };
 
-  const handleAudioPlay = (audioUrl: string, filename: string) => {
+  const handleAudioPlay = (
+    audioUrl: string,
+    filename: string,
+    analytical?: string,
+    humes?: string
+  ) => {
     // Construct full URL if it's a relative path
     const fullUrl = audioUrl.startsWith("http")
       ? audioUrl
@@ -121,6 +128,8 @@ const AllCategoriesContent: React.FC = () => {
       type: "audio",
       url: fullUrl,
       filename: filename,
+      analytical,
+      humes,
     });
   };
 
@@ -280,10 +289,34 @@ const AllCategoriesContent: React.FC = () => {
       >
         <DialogContent className="max-w-lg" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Preview: {selectedMedia?.filename}</DialogTitle>
+            <DialogTitle>Word: {selectedMedia?.filename}</DialogTitle>
           </DialogHeader>
           {selectedMedia && (
             <div className="mt-4">
+              {/* Analytical and Humes Text */}
+              <div className="mb-4 space-y-2">
+                {selectedMedia.analytical && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Analytical:
+                    </span>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {selectedMedia.analytical}
+                    </p>
+                  </div>
+                )}
+                {selectedMedia.humes && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Humes:
+                    </span>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {selectedMedia.humes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <MediaLoader
                 src={selectedMedia.url}
                 type={selectedMedia.type}

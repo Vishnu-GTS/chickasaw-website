@@ -35,6 +35,8 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     type: "audio" | "video";
     url: string;
     filename: string;
+    analytical?: string;
+    humes?: string;
   } | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
@@ -116,7 +118,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     }
   };
 
-  const handleAudioPlay = (audioUrl: string, filename: string) => {
+  const handleAudioPlay = (
+    audioUrl: string,
+    filename: string,
+    analytical?: string,
+    humes?: string
+  ) => {
     // Construct full URL if it's a relative path
     const fullUrl = audioUrl.startsWith("http")
       ? audioUrl
@@ -126,6 +133,8 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       type: "audio",
       url: fullUrl,
       filename: filename,
+      analytical,
+      humes,
     });
     setAudioError(null); // Clear any previous errors
   };
@@ -251,10 +260,33 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
       >
         <DialogContent className="max-w-lg" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>Preview: {selectedMedia?.filename}</DialogTitle>
+            <DialogTitle>Word: {selectedMedia?.filename}</DialogTitle>
           </DialogHeader>
           {selectedMedia && (
             <div className="mt-4">
+              {/* Analytical and Humes Text */}
+              <div className="mb-4 space-y-2">
+                {selectedMedia.analytical && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Analytical:
+                    </span>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {selectedMedia.analytical}
+                    </p>
+                  </div>
+                )}
+                {selectedMedia.humes && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Humes:
+                    </span>
+                    <p className="text-gray-600 text-sm mt-1">
+                      {selectedMedia.humes}
+                    </p>
+                  </div>
+                )}
+              </div>
               {selectedMedia.type === "audio" ? (
                 audioError ? (
                   <div className="text-red-600 text-center p-4">

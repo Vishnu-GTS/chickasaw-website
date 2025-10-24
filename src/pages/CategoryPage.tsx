@@ -89,7 +89,12 @@ const CategoryPage: React.FC = () => {
     fetchCategoryAndSubCategories();
   }, [categoryId, categoryName]);
 
-  const handleAudioPlay = async (audioUrl: string, filename: string) => {
+  const handleAudioPlay = async (
+    audioUrl: string,
+    filename: string,
+    analytical?: string,
+    humes?: string
+  ) => {
     try {
       // Test if the URL is accessible
       const response = await fetch(audioUrl, { method: "HEAD" });
@@ -107,6 +112,8 @@ const CategoryPage: React.FC = () => {
           type: "audio",
           url: alternativeUrl,
           filename,
+          analytical,
+          humes,
         });
         return;
       }
@@ -115,6 +122,8 @@ const CategoryPage: React.FC = () => {
         type: "audio",
         url: audioUrl,
         filename,
+        analytical,
+        humes,
       });
     } catch (error) {
       console.error("Error testing audio URL:", error);
@@ -126,6 +135,8 @@ const CategoryPage: React.FC = () => {
         type: "audio",
         url: alternativeUrl,
         filename,
+        analytical,
+        humes,
       });
     }
   };
@@ -256,7 +267,12 @@ const CategoryPage: React.FC = () => {
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleAudioPlay(item.audioUrl, item.name);
+                            handleAudioPlay(
+                              item.audioUrl,
+                              item.name,
+                              item.chickasawAnalytical,
+                              item.language
+                            );
                           }}
                         >
                           <Play
