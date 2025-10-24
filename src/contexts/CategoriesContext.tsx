@@ -6,7 +6,8 @@ import React, {
   useRef,
   type ReactNode,
 } from "react";
-import { categoryService, type Category } from "@/services/api";
+import { categoryService} from "@/services/api";
+import type { Category } from "@/types";
 
 interface CategoriesContextType {
   categories: Category[];

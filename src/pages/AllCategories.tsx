@@ -14,17 +14,15 @@ import {
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import MediaLoader from "@/components/ui/media-loader";
-import SearchResults from "./SearchResults";
-import SplashScreen from "./SplashScreen";
-import {
-  searchService,
-  type AdvancedSearchResult,
-  type Category,
-} from "@/services/api";
+import SearchResults from "../components/features/SearchResults";
+import SplashScreen from "../components/features/SplashScreen";
+import { searchService } from "@/services/api";
+import type { AdvancedSearchResult, Category } from "@/types";
 import {
   useCategories,
   CategoriesProvider,
 } from "@/contexts/CategoriesContext";
+import heroBg from "@/assets/hero_bg.png";
 
 const AllCategoriesContent: React.FC = () => {
   const { categories, loading, error } = useCategories();
@@ -158,7 +156,7 @@ const AllCategoriesContent: React.FC = () => {
       <div
         className="relative h-75 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('/src/assets/hero_bg.png')`,
+          backgroundImage: `url(${heroBg})`,
         }}
       >
         {/* Reddish-orange overlay */}

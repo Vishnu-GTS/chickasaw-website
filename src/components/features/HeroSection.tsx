@@ -11,13 +11,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import SearchResults from "./SearchResults";
-import { searchService, type AdvancedSearchResult } from "@/services/api";
+import { searchService } from "@/services/api";
 import {
   getSearchHistory,
   addToSearchHistory,
   type SearchHistoryItem,
 } from "@/lib/cookies";
 import heroBg from "@/assets/hero_bg.png";
+import type { AdvancedSearchResult } from "@/types";
 
 interface HeroSectionProps {
   onSearchResultClick: (word: AdvancedSearchResult) => void;
@@ -233,7 +234,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
               className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full bg-[#FFFFFFCC]  hover:bg-gray-50 transition-colors duration-200 shadow-sm"
             >
               {item.name}
-            </Button> 
+            </Button>
           ))}
         </div>
       </div>

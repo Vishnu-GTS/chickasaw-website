@@ -1,5 +1,5 @@
-import HeroSection from "./HeroSection";
-import MainContent from "./MainContent";
+import HeroSection from "../components/features/HeroSection";
+import MainContent from "../components/features/MainContent";
 import { CategoriesProvider } from "@/contexts/CategoriesContext";
 
 const HomePage = () => {

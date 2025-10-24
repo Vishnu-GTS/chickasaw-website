@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { SkeletonTableRow } from "@/components/ui/skeleton";
 import MediaLoader from "@/components/ui/media-loader";
-import { categoryService, type SubCategory } from "@/services/api";
-import type { AdvancedSearchResult } from "@/services/api";
+import { categoryService } from "@/services/api";
+import type { AdvancedSearchResult, SubCategory } from "@/types";
 import heroBg from "@/assets/hero_bg.png";
 
 const CategoryPage: React.FC = () => {
@@ -23,6 +23,8 @@ const CategoryPage: React.FC = () => {
     type: "audio" | "video";
     url: string;
     filename: string;
+    analytical?: string;
+    humes?: string;
   } | null>(null);
   const fetchedCategoryRef = useRef<string | null>(null);
 
@@ -294,9 +296,33 @@ const CategoryPage: React.FC = () => {
             }}
             className="bg-white p-4 rounded-lg max-w-lg w-full mx-4"
           >
-            <h2 className="text-lg font-bold mb-2">
-              Preview: {selectedMedia.filename}
+            <h2 className="text-xl font-bold mb-4 text-gray-800">
+              Word: {selectedMedia.filename}
             </h2>
+
+            {/* Analytical and Humes Text */}
+            <div className="mb-4 space-y-2">
+              {selectedMedia.analytical && (
+                <div>
+                  <span className="font-semibold text-gray-700 text-sm">
+                    Analytical:
+                  </span>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {selectedMedia.analytical}
+                  </p>
+                </div>
+              )}
+              {selectedMedia.humes && (
+                <div>
+                  <span className="font-semibold text-gray-700 text-sm">
+                    Humes:
+                  </span>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {selectedMedia.humes}
+                  </p>
+                </div>
+              )}
+            </div>
             <MediaLoader
               src={selectedMedia.url}
               type={selectedMedia.type}

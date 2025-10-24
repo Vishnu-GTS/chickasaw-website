@@ -10,18 +10,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import LoadingSpinner from "@/components/ui/loading-spinner";
 import Skeleton from "@/components/ui/skeleton";
 import MediaLoader from "@/components/ui/media-loader";
-import SearchResults from "./SearchResults";
-import type { SubCategory } from "@/services/api";
-import { searchService, type AdvancedSearchResult } from "@/services/api";
+import SearchResults from "../components/features/SearchResults";
+
+import { searchService } from "@/services/api";
 import {
   getSearchHistory,
   addToSearchHistory,
   type SearchHistoryItem,
 } from "@/lib/cookies";
 import heroBg from "@/assets/hero_bg.png";
+import type { AdvancedSearchResult, SubCategory } from "@/types";
 
 const WordDetails: React.FC = () => {
   const { wordName } = useParams<{
@@ -333,7 +333,7 @@ const WordDetails: React.FC = () => {
         navigate(`/category/${word._id}/${encodedCategoryName}`);
       } else {
         const encodedWordName = encodeURIComponent(word.name);
-        navigate(`/word/${word._id}/${encodedWordName}`);
+        navigate(`/word/${encodedWordName}`);
       }
     },
     [navigate]
@@ -473,7 +473,7 @@ const WordDetails: React.FC = () => {
             {recentSearches.slice(0, 5).map((item, index) => (
               <Button
                 key={index}
-                className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full  bg-[#FFFFFFCC]  hover:bg-gray-50 transition-colors duration-200 shadow-sm"
               >
                 {item.name}
               </Button>

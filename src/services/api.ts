@@ -1,100 +1,19 @@
 import axios from 'axios';
-
-const API_BASE_URL = 'https://chickasaw-admin-one.vercel.app/api';
+import { API_CONFIG } from '@/constants';
+import type {
+    CategoryListResponse,
+    SubCategoryListResponse,
+    AdvancedSearchResponse,
+} from '@/types';
 
 // Create axios instance with default config
 const api = axios.create({
-    baseURL: API_BASE_URL,
-    timeout: 10000,
+    baseURL: API_CONFIG.BASE_URL,
+    timeout: API_CONFIG.TIMEOUT,
     headers: {
         'Content-Type': 'application/json',
     },
 });
-
-// API response types
-export interface Category {
-    _id: string;
-    name: string;
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
-    wordCount: number;
-}
-
-export interface CategoryListResponse {
-    success: boolean;
-    message: string;
-    data: Category[];
-}
-
-export interface SubCategory {
-    _id: string;
-    name: string;
-    language: string;
-    category: {
-        _id: string;
-        name: string;
-        createdAt: string;
-        updatedAt: string;
-        __v: number;
-    };
-    mediaType: string;
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
-    chickasawAnalytical: string;
-    audioUrl: string;
-    videoUrl: string | null;
-}
-
-export interface SubCategoryListResponse {
-    success: boolean;
-    message: string;
-    data: SubCategory[];
-}
-
-// Advanced Search API types
-export interface AdvancedSearchResult {
-    _id: string;
-    name: string;
-    language: string;
-    chickasawAnalytical: string;
-    category: {
-        _id: string;
-        name: string;
-        createdAt: string;
-        updatedAt: string;
-        __v: number;
-    };
-    mediaType: string;
-    createdAt: string;
-    updatedAt: string;
-    __v: number;
-    audio?: {
-        id: string;
-        filename: string;
-        contentType: string;
-        url: string;
-    };
-    video?: {
-        id: string;
-        filename: string;
-        contentType: string;
-        url: string;
-    } | null;
-    mediaUrl: string;
-    type: string;
-}
-
-export interface AdvancedSearchResponse {
-    success: boolean;
-    message: string;
-    data: {
-        results: AdvancedSearchResult[];
-        total: number;
-        hasMore: boolean;
-    };
-}
 
 // API service functions
 export const categoryService = {

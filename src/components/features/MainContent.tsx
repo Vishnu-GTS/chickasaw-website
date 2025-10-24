@@ -6,9 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import Skeleton, { SkeletonTableRow } from "@/components/ui/skeleton";
 import MediaLoader from "@/components/ui/media-loader";
-import { categoryService, type SubCategory } from "@/services/api";
+import { categoryService } from "@/services/api";
 import { useCategories } from "@/contexts/CategoriesContext";
 import SplashScreen from "./SplashScreen";
+import type { SubCategory } from "@/types";
 
 const MainContent: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ const MainContent: React.FC = () => {
     type: "audio" | "video";
     url: string;
     filename: string;
+    analytical?: string;
+    humes?: string;
   } | null>(null);
 
   // Fetch sub-categories when category is selected
@@ -64,7 +67,9 @@ const MainContent: React.FC = () => {
   const handlePreview = async (
     type: "audio" | "video",
     audioUrl: string,
-    filename: string
+    filename: string,
+    analytical?: string,
+    humes?: string
   ) => {
     try {
       // Test if the URL is accessible
@@ -83,6 +88,8 @@ const MainContent: React.FC = () => {
           type,
           url: alternativeUrl,
           filename,
+          analytical,
+          humes,
         });
         return;
       }
@@ -91,6 +98,8 @@ const MainContent: React.FC = () => {
         type,
         url: audioUrl,
         filename,
+        analytical,
+        humes,
       });
     } catch (error) {
       console.error("Error testing audio URL:", error);
@@ -102,6 +111,8 @@ const MainContent: React.FC = () => {
         type,
         url: alternativeUrl,
         filename,
+        analytical,
+        humes,
       });
     }
   };
@@ -244,6 +255,7 @@ const MainContent: React.FC = () => {
                     subCategories.map((subCategory) => (
                       <div
                         key={subCategory._id}
+                        onClick={() => navigate(`/word/${subCategory.name}`)}
                         className="grid grid-cols-4 items-center gap-4 py-2 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                       >
                         <div className="text-gray-800 font-medium text-sm pl-2">
@@ -279,7 +291,9 @@ const MainContent: React.FC = () => {
                               handlePreview(
                                 "audio",
                                 subCategory.audioUrl,
-                                subCategory.name
+                                subCategory.name,
+                                subCategory.chickasawAnalytical,
+                                subCategory.language
                               );
                             }}
                           >
@@ -315,11 +329,36 @@ const MainContent: React.FC = () => {
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="bg-white p-4 rounded-lg max-w-lg w-full mx-4"
+            className="bg-white p-6 rounded-lg max-w-lg w-full mx-4"
           >
-            <h2 className="text-lg font-bold mb-2">
-              Preview: {selectedMedia.filename}
+            <h2 className="text-xl font-bold mb-4 text-gray-800">
+              Word: {selectedMedia.filename}
             </h2>
+
+            {/* Analytical and Humes Text */}
+            <div className="mb-4 space-y-2">
+              {selectedMedia.analytical && (
+                <div>
+                  <span className="font-semibold text-gray-700 text-sm">
+                    Analytical:
+                  </span>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {selectedMedia.analytical}
+                  </p>
+                </div>
+              )}
+              {selectedMedia.humes && (
+                <div>
+                  <span className="font-semibold text-gray-700 text-sm">
+                    Humes:
+                  </span>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {selectedMedia.humes}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <MediaLoader
               src={selectedMedia.url}
               type={selectedMedia.type}

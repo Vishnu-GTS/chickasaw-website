@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { AdvancedSearchResult } from "@/services/api";
+import type { AdvancedSearchResult } from "@/types";
 
 interface SearchResultsProps {
   results: AdvancedSearchResult[];

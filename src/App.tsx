@@ -1,14 +1,21 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Header from "./components/Header";
-import HomePage from "./components/HomePage";
-import CategoryPage from "./components/CategoryPage";
-import WordDetails from "./components/WordDetails";
-import AllCategories from "./components/AllCategories";
-import CreditsPage from "./components/CreditsPage";
-import AboutPage from "./components/AboutPage";
-import ScrollToTop from "./components/ScrollToTop";
+import { useEffect } from "react";
+import Header from "./components/layout/Header";
+import HomePage from "./pages/HomePage";
+import CategoryPage from "./pages/CategoryPage";
+import WordDetails from "./pages/WordDetails";
+import AllCategories from "./pages/AllCategories";
+import CreditsPage from "./pages/CreditsPage";
+import AboutPage from "./pages/AboutPage";
+import ScrollToTop from "./components/layout/ScrollToTop";
+import { initializeSearchHistory } from "./lib/cookies";
 
 function App() {
+  // Initialize search history when the app loads
+  useEffect(() => {
+    initializeSearchHistory();
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />
