@@ -26,7 +26,75 @@ export const getSearchHistory = (): SearchHistoryItem[] => {
             .find(row => row.startsWith(`${SEARCH_HISTORY_KEY}=`))
             ?.split('=')[1];
 
-        if (!cookieValue) return [];
+        // If no cookie exists, set default history
+        if (!cookieValue) {
+            const defaultHistory: SearchHistoryItem[] = [
+                {
+                    "id": "68f9e0f758872957ec816f5a",
+                    "name": "wolf",
+                    "chickasawAnalytical": "nashoba",
+                    "language": "nashoba",
+                    "mediaUrl": "/api/gridfs/68f9d87458872957ec816e10",
+                    "category": {
+                        "_id": "68f9cafd58872957ec816c51",
+                        "name": "Animals"
+                    },
+                    "timestamp": 1761307582152
+                },
+                {
+                    "id": "68f9e0f558872957ec816f1c",
+                    "name": "bird",
+                    "chickasawAnalytical": "foshi?",
+                    "language": "foshi",
+                    "mediaUrl": "/api/gridfs/68f9d85d58872957ec816dcc",
+                    "category": {
+                        "_id": "68f9cafd58872957ec816c51",
+                        "name": "Animals"
+                    },
+                    "timestamp": 1761307565184
+                },
+                {
+                    "id": "68f9e0f658872957ec816f32",
+                    "name": "fish",
+                    "chickasawAnalytical": "nani?",
+                    "language": "nunni",
+                    "mediaUrl": "/api/gridfs/68f9d86658872957ec816de4",
+                    "category": {
+                        "_id": "68f9cafd58872957ec816c51",
+                        "name": "Animals"
+                    },
+                    "timestamp": 1761307543233
+                },
+                {
+                    "id": "68f9cafd58872957ec816c51",
+                    "name": "Animals",
+                    "chickasawAnalytical": '',
+                    "language": '',
+                    "mediaUrl": "",
+                    "category": {
+                        "_id": "",
+                        "name": ""
+                    },
+                    "timestamp": 1761307531657
+                },
+                {
+                    "id": "68f9e0f558872957ec816f26",
+                    "name": "chicken",
+                    "chickasawAnalytical": "akanka?",
+                    "language": "akaka",
+                    "mediaUrl": "/api/gridfs/68f9d86058872957ec816dd6",
+                    "category": {
+                        "_id": "68f9cafd58872957ec816c51",
+                        "name": "Animals"
+                    },
+                    "timestamp": 1761307518898
+                }
+            ];
+
+            // Save the default history to cookies
+            saveSearchHistory(defaultHistory);
+            return defaultHistory;
+        }
 
         const decoded = decodeURIComponent(cookieValue);
         const parsedHistory = JSON.parse(decoded);
@@ -153,6 +221,11 @@ export const clearSearchHistory = (): void => {
 export const initializeSearchHistory = (): void => {
     if (typeof window === 'undefined') return;
 
-    // This will automatically check and set default data if cookie is empty
-    getSearchHistory();
+    try {
+        // This will automatically check and set default data if no cookie exists or if cookie is empty
+        const history = getSearchHistory();
+        console.log('Search history initialized with', history.length, 'items');
+    } catch (error) {
+        console.error('Error initializing search history:', error);
+    }
 };
