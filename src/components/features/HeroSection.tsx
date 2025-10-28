@@ -166,6 +166,24 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     }
   };
 
+  // Add handler for recent search clicks
+  const handleRecentSearchClick = (item: SearchHistoryItem) => {
+    // Check if it's a category or a word
+    // Categories have empty chickasawAnalytical and language
+    const isCategory =
+      !item.chickasawAnalytical && !item.language && !item.category?._id;
+
+    if (isCategory) {
+      // Navigate to category page
+      const encodedCategoryName = encodeURIComponent(item.name);
+      navigate(`/category/${item.id}/${encodedCategoryName}`);
+    } else {
+      // Navigate to word details page
+      const encodedWordName = encodeURIComponent(item.name);
+      navigate(`/word/${encodedWordName}`);
+    }
+  };
+
   return (
     <section className="relative py-9.5 overflow-visible">
       {/* Background Image */}
@@ -240,6 +258,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
           {recentSearches.slice(0, 6).map((item, index) => (
             <Button
               key={index}
+              onClick={() => handleRecentSearchClick(item)}
               className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full bg-[#FFFFFFCC]  hover:bg-gray-50 transition-colors duration-200 shadow-sm"
             >
               {item.name}

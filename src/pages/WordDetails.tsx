@@ -407,6 +407,24 @@ const WordDetails: React.FC = () => {
     );
   }
 
+  // Add handler for recent search clicks
+  const handleRecentSearchClick = (item: SearchHistoryItem) => {
+    // Check if it's a category or a word
+    // Categories have empty chickasawAnalytical and language
+    const isCategory =
+      !item.chickasawAnalytical && !item.language && !item.category?._id;
+
+    if (isCategory) {
+      // Navigate to category page
+      const encodedCategoryName = encodeURIComponent(item.name);
+      navigate(`/category/${item.id}/${encodedCategoryName}`);
+    } else {
+      // Navigate to word details page
+      const encodedWordName = encodeURIComponent(item.name);
+      navigate(`/word/${encodedWordName}`);
+    }
+  };
+
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section with Search */}
@@ -479,10 +497,11 @@ const WordDetails: React.FC = () => {
 
           {/* Category Buttons */}
           <div className="flex flex-wrap justify-center gap-2 max-w-4xl">
-            {recentSearches.slice(0, 5).map((item, index) => (
+            {recentSearches.slice(0, 6).map((item, index) => (
               <Button
                 key={index}
-                className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full  bg-[#FFFFFFCC]  hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+                onClick={() => handleRecentSearchClick(item)}
+                className="px-4 py-2 text-gray-700 text-sm font-medium rounded-full bg-[#FFFFFFCC]  hover:bg-gray-50 transition-colors duration-200 shadow-sm"
               >
                 {item.name}
               </Button>

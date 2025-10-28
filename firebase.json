@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "anompa-a9f6c",
+    "site": "chickasaw",
     "public": "dist",
     "ignore": [
       "firebase.json",
