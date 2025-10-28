@@ -166,7 +166,7 @@ const CategoryPage: React.FC = () => {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section with Background */}
-      <section className="relative h-[300px] overflow-hidden">
+      <section className="relative h-[200px] sm:h-[300px] overflow-hidden">
         {/* Background Image with Red Overlay */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -184,31 +184,31 @@ const CategoryPage: React.FC = () => {
         />
 
         {/* Category Title */}
-        <div className="relative z-10 flex items-center justify-center h-full">
-          <h1 className="text-4xl md:text-5xl font-bold text-white text-center">
+        <div className="relative z-10 flex items-center justify-center h-full px-4">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white text-center">
             {category?.name || "Category"}
           </h1>
         </div>
       </section>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Back Button */}
         <Button
           variant="ghost"
           onClick={handleBackToHome}
-          className="flex items-center text-sm font-medium mb-8 transition-colors duration-200 hover:underline"
+          className="flex items-center text-sm font-medium mb-4 sm:mb-8 transition-colors duration-200 hover:underline"
           style={{ color: "#D3191C" }}
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to List
         </Button>
 
-        {/* Table Container */}
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden ">
-          <div className="p-6">
-            {/* Table Header */}
-            <div className="grid grid-cols-4 gap-4 pb-3 border-b border-gray-200 mb-3">
+        {/* Mobile-First List Container */}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="p-4 sm:p-6">
+            {/* Desktop Table Header - Hidden on mobile */}
+            <div className="hidden sm:grid grid-cols-4 gap-4 pb-3 border-b border-gray-200 mb-3">
               <div className="font-semibold text-gray-700 text-sm pl-2">
                 Title
               </div>
@@ -219,7 +219,7 @@ const CategoryPage: React.FC = () => {
               <div className="font-semibold text-gray-700 text-sm"></div>
             </div>
 
-            {/* Table Content */}
+            {/* Content */}
             {loading ? (
               <div className="space-y-2">
                 {/* Show skeleton rows while loading */}
@@ -231,56 +231,119 @@ const CategoryPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-0">
                 {subCategories.map((item) => (
                   <div
                     key={item._id}
-                    className="grid grid-cols-4 gap-4 py-2 mb-0 items-center border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                    className="group cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                     onClick={() => handleWordClick(item)}
                   >
-                    <div className="text-gray-800 pl-2 font-medium text-sm">
-                      {item.name}
+                    {/* Mobile Layout - Similar to the uploaded image */}
+                    <div className="sm:hidden py-4 px-2 border-b border-gray-100 last:border-b-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          {/* Main title - bold and prominent */}
+                          <div className="text-gray-900 font-semibold text-[22px] mb-1">
+                            {item.name}
+                          </div>
+                          {/* Analytical translation - smaller, gray */}
+                          <div className="text-gray-500 text-sm">
+                            {item.chickasawAnalytical}
+                          </div>
+                        </div>
+                        {/* Humes translation - right aligned */}
+                        <div className="text-gray-700 text-sm ml-2 text-right">
+                          {item.language}
+                        </div>
+                        {/* Audio button */}
+                        <div className="ml-3 shrink-0">
+                          {item.audioUrl && (
+                            <Button
+                              size="icon"
+                              className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
+                              style={{
+                                backgroundColor: "#F7F7F7",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.stopPropagation();
+                                (
+                                  e.target as HTMLButtonElement
+                                ).style.backgroundColor = "#F9FAFB";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.stopPropagation();
+                                (
+                                  e.target as HTMLButtonElement
+                                ).style.backgroundColor = "#F7F7F7";
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAudioPlay(
+                                  item.audioUrl,
+                                  item.name,
+                                  item.chickasawAnalytical,
+                                  item.language
+                                );
+                              }}
+                            >
+                              <Play
+                                className="w-4 h-4 ml-0.5 fill-current"
+                                style={{ color: "#CC0000" }}
+                              />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-700 text-sm">
-                      {item.chickasawAnalytical}
-                    </div>
-                    <div className="text-gray-700 text-sm">{item.language}</div>
-                    <div className="flex justify-center">
-                      {item.audioUrl && (
-                        <Button
-                          size="icon"
-                          className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
-                          style={{
-                            backgroundColor: "#F7F7F7",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.stopPropagation();
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = "#F9FAFB";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.stopPropagation();
-                            (
-                              e.target as HTMLButtonElement
-                            ).style.backgroundColor = "#F7F7F7";
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAudioPlay(
-                              item.audioUrl,
-                              item.name,
-                              item.chickasawAnalytical,
-                              item.language
-                            );
-                          }}
-                        >
-                          <Play
-                            className="w-4 h-4 ml-0.5 fill-current"
-                            style={{ color: "#CC0000" }}
-                          />
-                        </Button>
-                      )}
+
+                    {/* Desktop Layout - Original table format */}
+                    <div className="hidden sm:grid grid-cols-4 gap-4 py-2 mb-0 items-center border-b border-gray-100 last:border-b-0">
+                      <div className="text-gray-800 pl-2 font-medium text-sm">
+                        {item.name}
+                      </div>
+                      <div className="text-gray-700 text-sm">
+                        {item.chickasawAnalytical}
+                      </div>
+                      <div className="text-gray-700 text-sm">
+                        {item.language}
+                      </div>
+                      <div className="flex justify-center">
+                        {item.audioUrl && (
+                          <Button
+                            size="icon"
+                            className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
+                            style={{
+                              backgroundColor: "#F7F7F7",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              (
+                                e.target as HTMLButtonElement
+                              ).style.backgroundColor = "#F9FAFB";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              (
+                                e.target as HTMLButtonElement
+                              ).style.backgroundColor = "#F7F7F7";
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAudioPlay(
+                                item.audioUrl,
+                                item.name,
+                                item.chickasawAnalytical,
+                                item.language
+                              );
+                            }}
+                          >
+                            <Play
+                              className="w-4 h-4 ml-0.5 fill-current"
+                              style={{ color: "#CC0000" }}
+                            />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

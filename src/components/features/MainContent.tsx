@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronsRight, Play } from "lucide-react";
+import { ChevronsRight, Play, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -17,6 +17,7 @@ const MainContent: React.FC = () => {
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [subCategoriesLoading, setSubCategoriesLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showCategoryData, setShowCategoryData] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{
     type: "audio" | "video";
     url: string;
@@ -42,12 +43,23 @@ const MainContent: React.FC = () => {
     }
   };
 
-  // Set first category as active by default when categories are loaded
+  // Set first category as active by default when categories are loaded (desktop only)
   useEffect(() => {
     if (categories.length > 0 && !selectedCategory) {
       setSelectedCategory(categories[0]._id);
     }
   }, [categories, selectedCategory]);
+
+  // Handle category selection for mobile
+  const handleCategoryClick = (categoryId: string | null) => {
+    setSelectedCategory(categoryId);
+    setShowCategoryData(true);
+  };
+
+  // Handle back button click
+  const handleBackToCategories = () => {
+    setShowCategoryData(false);
+  };
 
   // Fetch sub-categories when selected category changes
   useEffect(() => {
@@ -122,7 +134,11 @@ const MainContent: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Category List */}
-          <div className="lg:col-span-1">
+          <div
+            className={`lg:col-span-1 ${
+              showCategoryData ? "hidden lg:block" : "block"
+            }`}
+          >
             <div className="flex justify-between pb-2 px-2 items-center">
               <div className="text-xl font-medium text-gray-800">Category</div>
               <Button
@@ -174,7 +190,7 @@ const MainContent: React.FC = () => {
                           ? { backgroundColor: "#D3191C" }
                           : {}
                       }
-                      onClick={() => setSelectedCategory(null)}
+                      onClick={() => handleCategoryClick(null)}
                     ></div>
 
                     {categories.map((category) => (
@@ -190,7 +206,7 @@ const MainContent: React.FC = () => {
                             ? { backgroundColor: "#D3191C" }
                             : {}
                         }
-                        onClick={() => setSelectedCategory(category._id)}
+                        onClick={() => handleCategoryClick(category._id)}
                       >
                         <div className="flex justify-between items-center">
                           <span className="font-medium text-sm">
@@ -215,7 +231,22 @@ const MainContent: React.FC = () => {
           </div>
 
           {/* Right Column - Content Details */}
-          <div className="lg:col-span-2">
+          <div
+            className={`lg:col-span-2 ${
+              showCategoryData ? "block" : "hidden lg:block"
+            }`}
+          >
+            {/* Back Button - Only visible on mobile */}
+            <Button
+              variant="ghost"
+              className="lg:hidden mb-4 flex items-center gap-2 px-0 hover:bg-transparent"
+              style={{ color: "#D3191C" }}
+              onClick={handleBackToCategories}
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back to Categories</span>
+            </Button>
+
             <div className="text-xl font-medium pb-2    ">
               {selectedCategory === null
                 ? "All Categories"

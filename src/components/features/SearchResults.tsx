@@ -13,7 +13,12 @@ interface SearchResultsProps {
   results: AdvancedSearchResult[];
   isVisible: boolean;
   onResultClick: (word: AdvancedSearchResult) => void;
-  onAudioPlay?: (audioUrl: string, filename: string, analytical?: string, humes?: string) => void;
+  onAudioPlay?: (
+    audioUrl: string,
+    filename: string,
+    analytical?: string,
+    humes?: string
+  ) => void;
   children: React.ReactNode;
   searchQuery: string;
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
@@ -163,7 +168,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onAudioPlay && audioUrl) {
-                          onAudioPlay(audioUrl, filename, word.chickasawAnalytical, word.language );
+                          onAudioPlay(
+                            audioUrl,
+                            filename,
+                            word.chickasawAnalytical,
+                            word.language
+                          );
                         } else {
                           console.log(`Playing audio for: ${word.name}`);
                         }
