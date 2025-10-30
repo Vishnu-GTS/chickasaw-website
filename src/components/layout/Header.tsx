@@ -52,6 +52,13 @@ const Header: React.FC = () => {
               >
                 Credits
               </Button>
+              <Button
+                variant="none"
+                className="text-gray-600 text-sm hover:text-gray-800 p-0 h-auto"
+                onClick={() => navigate("/privacy-policy")}
+              >
+                Privacy Policy
+              </Button>
             </div>
 
             {/* Mobile Menu Button */}

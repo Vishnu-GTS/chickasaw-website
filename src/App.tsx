@@ -7,6 +7,7 @@ import WordDetails from "./pages/WordDetails";
 import AllCategories from "./pages/AllCategories";
 import CreditsPage from "./pages/CreditsPage";
 import AboutPage from "./pages/AboutPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import { initializeSearchHistory } from "./lib/cookies";
 
@@ -31,6 +32,7 @@ function App() {
           <Route path="/word/:wordName" element={<WordDetails />} />
           <Route path="/credits" element={<CreditsPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         </Routes>
       </div>
     </Router>

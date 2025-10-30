@@ -35,6 +35,7 @@ export const ROUTES = {
     WORD: '/word/:wordName',
     CREDITS: '/credits',
     ABOUT: '/about',
+    PRIVACY_POLICY: '/privacy-policy',
 } as const;
 
 // Local storage keys

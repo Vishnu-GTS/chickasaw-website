@@ -77,6 +77,19 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                   </span>
                 </div>
               </Button>
+
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-gray-600 hover:text-gray-800 hover:bg-gray-100 p-4 h-auto text-left"
+                onClick={() => handleNavigation("/privacy-policy")}
+              >
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">Privacy Policy</span>
+                  <span className="text-sm text-gray-500 mt-1">
+                    Our commitment to your privacy
+                  </span>
+                </div>
+              </Button>
             </nav>
           </div>
 
