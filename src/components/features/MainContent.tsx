@@ -94,7 +94,7 @@ const MainContent: React.FC = () => {
         );
         // Try alternative URL format
         const fileId = audioUrl.split("/").pop();
-        const alternativeUrl = `https://chickasaw-admin-one.vercel.app/api/gridfs/${fileId}`;
+        const alternativeUrl = `https://admin.anompa.com/api/gridfs/${fileId}`;
         console.log("Trying alternative URL:", alternativeUrl);
         setSelectedMedia({
           type,
@@ -117,7 +117,7 @@ const MainContent: React.FC = () => {
       console.error("Error testing audio URL:", error);
       // Try alternative URL format
       const fileId = audioUrl.split("/").pop();
-      const alternativeUrl = `https://chickasaw-admin-one.vercel.app/api/gridfs/${fileId}`;
+      const alternativeUrl = `https://admin.anompa.com/api/gridfs/${fileId}`;
       console.log("Trying alternative URL:", alternativeUrl);
       setSelectedMedia({
         type,

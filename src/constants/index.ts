@@ -2,7 +2,7 @@
 
 // API Configuration
 export const API_CONFIG = {
-    BASE_URL: 'https://chickasaw-admin-one.vercel.app/api',
+    BASE_URL: 'https://admin.anompa.com/api/',
     TIMEOUT: 10000,
 } as const;
 

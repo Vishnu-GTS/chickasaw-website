@@ -228,7 +228,7 @@ const WordDetails: React.FC = () => {
     // Construct full URL if it's a relative path
     const fullUrl = audioUrl.startsWith("http")
       ? audioUrl
-      : `https://chickasaw-admin-one.vercel.app${audioUrl}`;
+      : `https://admin.anompa.com${audioUrl}`;
 
     setSelectedMedia({
       type: "audio",
