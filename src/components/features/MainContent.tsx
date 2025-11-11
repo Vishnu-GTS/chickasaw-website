@@ -18,13 +18,7 @@ const MainContent: React.FC = () => {
   const [subCategoriesLoading, setSubCategoriesLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showCategoryData, setShowCategoryData] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<{
-    type: "audio" | "video";
-    url: string;
-    filename: string;
-    analytical?: string;
-    humes?: string;
-  } | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
   // Fetch sub-categories when category is selected
   const fetchSubCategories = async (categoryId: string) => {
@@ -75,58 +69,9 @@ const MainContent: React.FC = () => {
     return <SplashScreen />;
   }
 
-  // Function to preview audio
-  const handlePreview = async (
-    type: "audio" | "video",
-    audioUrl: string,
-    filename: string,
-    analytical?: string,
-    humes?: string
-  ) => {
-    try {
-      // Test if the URL is accessible
-      const response = await fetch(audioUrl, { method: "HEAD" });
-      if (!response.ok) {
-        console.error(
-          "Audio URL not accessible:",
-          response.status,
-          response.statusText
-        );
-        // Try alternative URL format
-        const fileId = audioUrl.split("/").pop();
-        const alternativeUrl = `https://admin.anompa.com/api/gridfs/${fileId}`;
-        console.log("Trying alternative URL:", alternativeUrl);
-        setSelectedMedia({
-          type,
-          url: alternativeUrl,
-          filename,
-          analytical,
-          humes,
-        });
-        return;
-      }
-
-      setSelectedMedia({
-        type,
-        url: audioUrl,
-        filename,
-        analytical,
-        humes,
-      });
-    } catch (error) {
-      console.error("Error testing audio URL:", error);
-      // Try alternative URL format
-      const fileId = audioUrl.split("/").pop();
-      const alternativeUrl = `https://admin.anompa.com/api/gridfs/${fileId}`;
-      console.log("Trying alternative URL:", alternativeUrl);
-      setSelectedMedia({
-        type,
-        url: alternativeUrl,
-        filename,
-        analytical,
-        humes,
-      });
-    }
+  // Function to toggle row expansion
+  const handleToggleRow = (subCategoryId: string) => {
+    setExpandedRowId(expandedRowId === subCategoryId ? null : subCategoryId);
   };
 
   return (
@@ -254,10 +199,22 @@ const MainContent: React.FC = () => {
                     ?.name || "Select a Category"}
             </div>
 
-            <Card className="bg-white shadow-none  rounded-lg">
-              <CardContent className="pt-0">
-                {/* Table Header */}
-                <div className="grid grid-cols-4 gap-4 pb-3 border-b border-gray-200 mb-3">
+            <Card className="bg-white shadow-none py-4  rounded-lg">
+              <CardContent className="px-0 lg:px-3  pt-0">
+                {/* Mobile Header - Visible only on small screens */}
+                <div className="sm:hidden pb-3 border-b border-gray-200 ">
+                  <div className="flex items-center justify-between px-4">
+                    <div className="font-semibold text-gray-700 text-base">
+                      Words
+                    </div>
+                    <div className="font-semibold text-gray-700 text-sm">
+                      Audio
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop Table Header - Hidden on mobile */}
+                <div className="hidden sm:grid grid-cols-4  px-2 lg:px-6 gap-4 pb-3 border-b border-gray-200 ">
                   <div className="font-semibold text-gray-700 text-sm pl-2">
                     Title
                   </div>
@@ -271,7 +228,7 @@ const MainContent: React.FC = () => {
                 </div>
 
                 {/* Table Content */}
-                <div className="space-y-2">
+                <div className="space-y-2 sm:space-y-0">
                   {subCategoriesLoading ? (
                     <div className="space-y-2">
                       {/* Show skeleton rows while loading */}
@@ -284,57 +241,143 @@ const MainContent: React.FC = () => {
                     </div>
                   ) : subCategories.length > 0 ? (
                     subCategories.map((subCategory) => (
-                      <div
-                        key={subCategory._id}
-                        onClick={() => navigate(`/word/${subCategory.name}`)}
-                        className="grid grid-cols-4 items-center gap-4 py-2 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                      >
-                        <div className="text-gray-800 font-medium text-sm pl-2">
-                          {subCategory.name}
+                      <React.Fragment key={subCategory._id}>
+                        {/* Mobile Layout */}
+                        <div
+                          className="sm:hidden py-3.5 px-4 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                          onClick={() => navigate(`/word/${subCategory.name}`)}
+                        >
+                          <div className="flex items-center gap-2 justify-between">
+                            <div className="flex-1 space-y-0.5 min-w-0">
+                              {/* Main title - bold and prominent */}
+                              <div className="text-gray-900 font-semibold break-all text-[20px] ">
+                                {subCategory.name}
+                              </div>
+
+                              {/* Analytical translation - smaller, gray */}
+                              <div className="break-all text-lg">
+                                <span className="text-gray-900 font-medium">
+                                  {subCategory.chickasawAnalytical}
+                                </span>
+                              </div>
+
+                              {/* Humes translation */}
+                              {subCategory.language !== "-" && (
+                                <div className="break-all text-base">
+                                  <span className="text-gray-500">
+                                    {subCategory.language}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="ml-3 shrink-0">
+                              <Button
+                                size="icon"
+                                className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
+                                style={{
+                                  backgroundColor: "#F7F7F7",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.stopPropagation();
+                                  (
+                                    e.target as HTMLButtonElement
+                                  ).style.backgroundColor = "#F9FAFB";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.stopPropagation();
+                                  (
+                                    e.target as HTMLButtonElement
+                                  ).style.backgroundColor = "#F7F7F7";
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleRow(subCategory._id);
+                                }}
+                              >
+                                <Play
+                                  className="w-4 h-4 ml-0.5 fill-current"
+                                  style={{ color: "#CC0000" }}
+                                />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-gray-700 text-sm">
-                          {subCategory.chickasawAnalytical}
+
+                        {/* Desktop Layout - Original simple format */}
+                        <div
+                          onClick={() => navigate(`/word/${subCategory.name}`)}
+                          className="hidden sm:grid grid-cols-4  items-center gap-4 py-2 px-2 lg:px-6 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          <div className="text-gray-800 font-medium text-sm break-word pl-2">
+                            {subCategory.name}
+                          </div>
+                          <div className="text-gray-700  break-word text-sm">
+                            {subCategory.chickasawAnalytical}
+                          </div>
+                          <div className="text-gray-700 break-word text-sm">
+                            {subCategory.language}
+                          </div>
+                          <div className="flex justify-center">
+                            <Button
+                              size="icon"
+                              className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
+                              style={{
+                                backgroundColor: "#F7F7F7",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.stopPropagation();
+                                (
+                                  e.target as HTMLButtonElement
+                                ).style.backgroundColor = "#F9FAFB";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.stopPropagation();
+                                (
+                                  e.target as HTMLButtonElement
+                                ).style.backgroundColor = "#F7F7F7";
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleRow(subCategory._id);
+                              }}
+                            >
+                              <Play
+                                className="w-4 h-4 ml-0.5 fill-current"
+                                style={{ color: "#CC0000" }}
+                              />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="text-gray-700 text-sm">
-                          {subCategory.language}
-                        </div>
-                        <div className="flex justify-center">
-                          <Button
-                            size="icon"
-                            className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
-                            style={{
-                              backgroundColor: "#F7F7F7",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.stopPropagation();
-                              (
-                                e.target as HTMLButtonElement
-                              ).style.backgroundColor = "#F9FAFB";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.stopPropagation();
-                              (
-                                e.target as HTMLButtonElement
-                              ).style.backgroundColor = "#F7F7F7";
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePreview(
-                                "audio",
-                                subCategory.audioUrl,
-                                subCategory.name,
-                                subCategory.chickasawAnalytical,
-                                subCategory.language
-                              );
-                            }}
-                          >
-                            <Play
-                              className="w-4 h-4 ml-0.5 fill-current"
-                              style={{ color: "#CC0000" }}
-                            />
-                          </Button>
-                        </div>
-                      </div>
+
+                        {/* Expanded Media Player Row */}
+                        {expandedRowId === subCategory._id && (
+                          <div className="bg-gray-50 p-2 border-b border-gray-100">
+                            <div className="space-y-3">
+                              {/* Media Player */}
+                              <MediaLoader
+                                src={subCategory.audioUrl}
+                                type="audio"
+                                autoPlay
+                                onError={(error) => {
+                                  console.error("Media load error:", error);
+                                }}
+                                onLoadStart={() => {
+                                  console.log(
+                                    "Media loading started:",
+                                    subCategory.audioUrl
+                                  );
+                                }}
+                                onCanPlay={() => {
+                                  console.log(
+                                    "Media can play:",
+                                    subCategory.audioUrl
+                                  );
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </React.Fragment>
                     ))
                   ) : (
                     <div className="text-center py-8">
@@ -349,72 +392,6 @@ const MainContent: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Media Preview Modal */}
-      {selectedMedia && (
-        <div
-          onClick={() => setSelectedMedia(null)}
-          className="fixed inset-0 bg-black/50 bg-opacity-20 flex items-center justify-center z-50"
-        >
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="bg-white p-6 rounded-lg max-w-lg w-full mx-4"
-          >
-            <h2 className="text-xl font-bold mb-4 text-gray-800">
-              Word: {selectedMedia.filename}
-            </h2>
-
-            {/* Analytical and Humes Text */}
-            <div className="mb-4 space-y-2">
-              {selectedMedia.analytical && (
-                <div>
-                  <span className="font-semibold text-gray-700 text-sm">
-                    Analytical:
-                  </span>
-                  <p className="text-gray-600 text-sm mt-1">
-                    {selectedMedia.analytical}
-                  </p>
-                </div>
-              )}
-              {selectedMedia.humes && (
-                <div>
-                  <span className="font-semibold text-gray-700 text-sm">
-                    Humes:
-                  </span>
-                  <p className="text-gray-600 text-sm mt-1">
-                    {selectedMedia.humes}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <MediaLoader
-              src={selectedMedia.url}
-              type={selectedMedia.type}
-              autoPlay
-              onError={(error) => {
-                console.error("Media load error:", error);
-              }}
-              onLoadStart={() => {
-                console.log("Media loading started:", selectedMedia.url);
-              }}
-              onCanPlay={() => {
-                console.log("Media can play:", selectedMedia.url);
-              }}
-            />
-
-            <button
-              type="button"
-              className="hover:cursor-pointer mt-4 bg-red-500 text-white px-4 py-2 rounded"
-              onClick={() => setSelectedMedia(null)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

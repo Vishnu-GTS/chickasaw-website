@@ -19,13 +19,7 @@ const CategoryPage: React.FC = () => {
   const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMedia, setSelectedMedia] = useState<{
-    type: "audio" | "video";
-    url: string;
-    filename: string;
-    analytical?: string;
-    humes?: string;
-  } | null>(null);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const fetchedCategoryRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -89,56 +83,9 @@ const CategoryPage: React.FC = () => {
     fetchCategoryAndSubCategories();
   }, [categoryId, categoryName]);
 
-  const handleAudioPlay = async (
-    audioUrl: string,
-    filename: string,
-    analytical?: string,
-    humes?: string
-  ) => {
-    try {
-      // Test if the URL is accessible
-      const response = await fetch(audioUrl, { method: "HEAD" });
-      if (!response.ok) {
-        console.error(
-          "Audio URL not accessible:",
-          response.status,
-          response.statusText
-        );
-        // Try alternative URL format
-        const fileId = audioUrl.split("/").pop();
-        const alternativeUrl = `https://admin.anompa.com/api/gridfs/${fileId}`;
-        console.log("Trying alternative URL:", alternativeUrl);
-        setSelectedMedia({
-          type: "audio",
-          url: alternativeUrl,
-          filename,
-          analytical,
-          humes,
-        });
-        return;
-      }
-
-      setSelectedMedia({
-        type: "audio",
-        url: audioUrl,
-        filename,
-        analytical,
-        humes,
-      });
-    } catch (error) {
-      console.error("Error testing audio URL:", error);
-      // Try alternative URL format
-      const fileId = audioUrl.split("/").pop();
-      const alternativeUrl = `https://admin.anompa.com/api/gridfs/${fileId}`;
-      console.log("Trying alternative URL:", alternativeUrl);
-      setSelectedMedia({
-        type: "audio",
-        url: alternativeUrl,
-        filename,
-        analytical,
-        humes,
-      });
-    }
+  // Function to toggle row expansion
+  const handleToggleRow = (subCategoryId: string) => {
+    setExpandedRowId(expandedRowId === subCategoryId ? null : subCategoryId);
   };
 
   const handleWordClick = (subCategory: SubCategory) => {
@@ -206,9 +153,19 @@ const CategoryPage: React.FC = () => {
 
         {/* Mobile-First List Container */}
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <div className="p-4 sm:p-6">
+          <div className="py-4 sm:p-6">
+            {/* Mobile Header - Visible only on small screens */}
+            <div className="sm:hidden pb-3 border-b border-gray-200">
+              <div className="flex items-center justify-between px-4">
+                <div className="font-semibold text-gray-700 text-base">
+                  Words
+                </div>
+                <div className="font-semibold text-gray-700 text-sm">Audio</div>
+              </div>
+            </div>
+
             {/* Desktop Table Header - Hidden on mobile */}
-            <div className="hidden sm:grid grid-cols-4 gap-4 pb-3 border-b border-gray-200 mb-3">
+            <div className="hidden sm:grid grid-cols-4 px-2 lg:px-6 gap-4 pb-3 border-b border-gray-200">
               <div className="font-semibold text-gray-700 text-sm pl-2">
                 Title
               </div>
@@ -231,84 +188,38 @@ const CategoryPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-0">
+              <div className="space-y-2 sm:space-y-0">
                 {subCategories.map((item) => (
-                  <div
-                    key={item._id}
-                    className="group cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                    onClick={() => handleWordClick(item)}
-                  >
-                    {/* Mobile Layout - Similar to the uploaded image */}
-                    <div className="sm:hidden py-4 px-2 border-b border-gray-100 last:border-b-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
+                  <React.Fragment key={item._id}>
+                    {/* Mobile Layout */}
+                    <div
+                      className="sm:hidden py-3.5 px-4 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                      onClick={() => handleWordClick(item)}
+                    >
+                      <div className="flex items-center gap-2 justify-between">
+                        <div className="flex-1 space-y-0.5 min-w-0">
                           {/* Main title - bold and prominent */}
-                          <div className="text-gray-900 font-semibold text-[22px] mb-1">
+                          <div className="text-gray-900 font-semibold break-all text-[20px]">
                             {item.name}
                           </div>
+
                           {/* Analytical translation - smaller, gray */}
-                          <div className="text-gray-500 text-sm">
-                            {item.chickasawAnalytical}
+                          <div className="break-all text-lg">
+                            <span className="text-gray-900 font-medium">
+                              {item.chickasawAnalytical}
+                            </span>
                           </div>
-                        </div>
-                        {/* Humes translation - right aligned */}
-                        <div className="text-gray-700 text-sm ml-2 text-right">
-                          {item.language}
-                        </div>
-                        {/* Audio button */}
-                        <div className="ml-3 shrink-0">
-                          {item.audioUrl && (
-                            <Button
-                              size="icon"
-                              className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
-                              style={{
-                                backgroundColor: "#F7F7F7",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.stopPropagation();
-                                (
-                                  e.target as HTMLButtonElement
-                                ).style.backgroundColor = "#F9FAFB";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.stopPropagation();
-                                (
-                                  e.target as HTMLButtonElement
-                                ).style.backgroundColor = "#F7F7F7";
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAudioPlay(
-                                  item.audioUrl,
-                                  item.name,
-                                  item.chickasawAnalytical,
-                                  item.language
-                                );
-                              }}
-                            >
-                              <Play
-                                className="w-4 h-4 ml-0.5 fill-current"
-                                style={{ color: "#CC0000" }}
-                              />
-                            </Button>
+
+                          {/* Humes translation */}
+                          {item.language !== "-" && (
+                            <div className="break-all text-base">
+                              <span className="text-gray-500">
+                                {item.language}
+                              </span>
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Desktop Layout - Original table format */}
-                    <div className="hidden sm:grid grid-cols-4 gap-4 py-2 mb-0 items-center border-b border-gray-100 last:border-b-0">
-                      <div className="text-gray-800 pl-2 font-medium text-sm">
-                        {item.name}
-                      </div>
-                      <div className="text-gray-700 text-sm">
-                        {item.chickasawAnalytical}
-                      </div>
-                      <div className="text-gray-700 text-sm">
-                        {item.language}
-                      </div>
-                      <div className="flex justify-center">
-                        {item.audioUrl && (
+                        <div className="ml-3 shrink-0">
                           <Button
                             size="icon"
                             className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
@@ -329,12 +240,7 @@ const CategoryPage: React.FC = () => {
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleAudioPlay(
-                                item.audioUrl,
-                                item.name,
-                                item.chickasawAnalytical,
-                                item.language
-                              );
+                              handleToggleRow(item._id);
                             }}
                           >
                             <Play
@@ -342,10 +248,82 @@ const CategoryPage: React.FC = () => {
                               style={{ color: "#CC0000" }}
                             />
                           </Button>
-                        )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+
+                    {/* Desktop Layout - Original simple format */}
+                    <div
+                      onClick={() => handleWordClick(item)}
+                      className="hidden sm:grid grid-cols-4 items-center gap-4 py-2 px-2 lg:px-6 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <div className="text-gray-800 font-medium text-sm break-word   pl-2">
+                        {item.name}
+                      </div>
+                      <div className="text-gray-700 break-word text-sm">
+                        {item.chickasawAnalytical}
+                      </div>
+                      <div className="text-gray-700 break-word text-sm">
+                        {item.language}
+                      </div>
+                      <div className="flex justify-center">
+                        <Button
+                          size="icon"
+                          className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
+                          style={{
+                            backgroundColor: "#F7F7F7",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            (
+                              e.target as HTMLButtonElement
+                            ).style.backgroundColor = "#F9FAFB";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            (
+                              e.target as HTMLButtonElement
+                            ).style.backgroundColor = "#F7F7F7";
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleRow(item._id);
+                          }}
+                        >
+                          <Play
+                            className="w-4 h-4 ml-0.5 fill-current"
+                            style={{ color: "#CC0000" }}
+                          />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Media Player Row */}
+                    {expandedRowId === item._id && (
+                      <div className="bg-gray-50 p-2 border-b border-gray-100">
+                        <div className="space-y-3">
+                          {/* Media Player */}
+                          <MediaLoader
+                            src={item.audioUrl}
+                            type="audio"
+                            autoPlay
+                            onError={(error) => {
+                              console.error("Media load error:", error);
+                            }}
+                            onLoadStart={() => {
+                              console.log(
+                                "Media loading started:",
+                                item.audioUrl
+                              );
+                            }}
+                            onCanPlay={() => {
+                              console.log("Media can play:", item.audioUrl);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
             )}
@@ -360,75 +338,6 @@ const CategoryPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Media Preview Modal */}
-      {selectedMedia && (
-        <div
-          onClick={() => {
-            setSelectedMedia(null);
-          }}
-          className="fixed inset-0 bg-black/50 bg-opacity-20 flex items-center justify-center z-50"
-        >
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className="bg-white p-4 rounded-lg max-w-lg w-full mx-4"
-          >
-            <h2 className="text-xl font-bold mb-4 text-gray-800">
-              Word: {selectedMedia.filename}
-            </h2>
-
-            {/* Analytical and Humes Text */}
-            <div className="mb-4 space-y-2">
-              {selectedMedia.analytical && (
-                <div>
-                  <span className="font-semibold text-gray-700 text-sm">
-                    Analytical:
-                  </span>
-                  <p className="text-gray-600 text-sm mt-1">
-                    {selectedMedia.analytical}
-                  </p>
-                </div>
-              )}
-              {selectedMedia.humes && (
-                <div>
-                  <span className="font-semibold text-gray-700 text-sm">
-                    Humes:
-                  </span>
-                  <p className="text-gray-600 text-sm mt-1">
-                    {selectedMedia.humes}
-                  </p>
-                </div>
-              )}
-            </div>
-            <MediaLoader
-              src={selectedMedia.url}
-              type={selectedMedia.type}
-              autoPlay
-              onError={(error) => {
-                console.error("Media load error:", error);
-              }}
-              onLoadStart={() => {
-                console.log("Media loading started:", selectedMedia.url);
-              }}
-              onCanPlay={() => {
-                console.log("Media can play:", selectedMedia.url);
-              }}
-            />
-
-            <button
-              type="button"
-              className="hover:cursor-pointer mt-4 bg-red-500 text-white px-4 py-2 rounded"
-              onClick={() => {
-                setSelectedMedia(null);
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

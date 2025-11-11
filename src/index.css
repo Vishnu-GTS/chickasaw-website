@@ -124,3 +124,8 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+
+.break-word {
+  word-break: break-word;
+}

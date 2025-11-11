@@ -3,13 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import Skeleton from "@/components/ui/skeleton";
 import MediaLoader from "@/components/ui/media-loader";
 import SearchResults from "../components/features/SearchResults";
@@ -33,13 +26,7 @@ const WordDetails: React.FC = () => {
   const [word, setWord] = useState<SubCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMedia, setSelectedMedia] = useState<{
-    type: "audio" | "video";
-    url: string;
-    filename: string;
-    analytical?: string;
-    humes?: string;
-  } | null>(null);
+  const [showMediaPlayer, setShowMediaPlayer] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [apiResults, setApiResults] = useState<AdvancedSearchResult[]>([]);
@@ -219,24 +206,8 @@ const WordDetails: React.FC = () => {
     };
   }, [wordName]);
 
-  const handleAudioPlay = (
-    audioUrl: string,
-    filename: string,
-    analytical?: string,
-    humes?: string
-  ) => {
-    // Construct full URL if it's a relative path
-    const fullUrl = audioUrl.startsWith("http")
-      ? audioUrl
-      : `https://admin.anompa.com${audioUrl}`;
-
-    setSelectedMedia({
-      type: "audio",
-      url: fullUrl,
-      filename: filename,
-      analytical,
-      humes,
-    });
+  const handleAudioPlay = () => {
+    setShowMediaPlayer(!showMediaPlayer);
   };
 
   // Perform API search
@@ -463,7 +434,7 @@ const WordDetails: React.FC = () => {
               results={searchResults}
               isVisible={showResults}
               onResultClick={handleResultClick}
-              onAudioPlay={handleAudioPlay}
+              onAudioPlay={() => {}}
               searchQuery={searchQuery}
               searchInputRef={searchInputRef}
               isLoading={isSearchLoading}
@@ -534,7 +505,7 @@ const WordDetails: React.FC = () => {
 
               {/* Word Details Skeleton */}
               <div className="bg-white">
-                <div className="flex flex-wrap gap-8 mb-8">
+                <div className="flex flex-wrap lg:gap-8 mb-8">
                   <div className="flex items-baseline">
                     <Skeleton height="h-6" width="w-24" />
                     <Skeleton height="h-6" width="w-32" className="ml-2" />
@@ -546,7 +517,7 @@ const WordDetails: React.FC = () => {
                 </div>
 
                 {/* Play Button Skeleton */}
-                <div className="mb-8">
+                <div className="mb-8"> 
                   <Skeleton height="h-12" width="w-32" />
                 </div>
 
@@ -567,7 +538,7 @@ const WordDetails: React.FC = () => {
 
               {/* Word Details */}
               <div className="bg-white">
-                <div className="flex flex-wrap gap-8 mb-8">
+                <div className="flex flex-col lg:flex-row lg:gap-8 mb-8">
                   <div className="flex items-baseline">
                     <span className="text-lg text-black font-semibold mr-1.5">
                       Analytical:
@@ -597,44 +568,68 @@ const WordDetails: React.FC = () => {
 
                 {/* Audio Play Button */}
                 {word?.audioUrl ? (
-                  <div className="mb-8">
-                    <Button
-                      onClick={() =>
-                        handleAudioPlay(
-                          word.audioUrl,
-                          word.name,
-                          word.chickasawAnalytical,
-                          word.language
-                        )
-                      }
-                      className="text-white px-10 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 hover:shadow-xl"
-                      style={{
-                        backgroundColor: "#CC0000",
-                        borderColor: "#CC0000",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          "#B30000";
-                        (e.target as HTMLButtonElement).style.transform =
-                          "translateY(-1px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLButtonElement).style.backgroundColor =
-                          "#CC0000";
-                        (e.target as HTMLButtonElement).style.transform =
-                          "translateY(0)";
-                      }}
-                    >
-                      <svg
-                        className="w-6 h-6"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
+                  <>
+                    <div className="mb-8">
+                      <Button
+                        onClick={handleAudioPlay}
+                        className="text-white px-10 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 hover:shadow-xl"
+                        style={{
+                          backgroundColor: "#CC0000",
+                          borderColor: "#CC0000",
+                        }}
+                        onMouseEnter={(e) => {
+                          (
+                            e.target as HTMLButtonElement
+                          ).style.backgroundColor = "#B30000";
+                          (e.target as HTMLButtonElement).style.transform =
+                            "translateY(-1px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (
+                            e.target as HTMLButtonElement
+                          ).style.backgroundColor = "#CC0000";
+                          (e.target as HTMLButtonElement).style.transform =
+                            "translateY(0)";
+                        }}
                       >
-                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                      </svg>
-                      Play
-                    </Button>
-                  </div>
+                        <svg
+                          className="w-6 h-6"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                        </svg>
+                        {showMediaPlayer ? "Hide" : "Play"}
+                      </Button>
+                    </div>
+
+                    {/* Inline Media Player */}
+                    {showMediaPlayer && (
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-8">
+                        <MediaLoader
+                          src={
+                            word.audioUrl.startsWith("http")
+                              ? word.audioUrl
+                              : `https://admin.anompa.com${word.audioUrl}`
+                          }
+                          type="audio"
+                          autoPlay
+                          onError={(error) => {
+                            console.error("Media load error:", error);
+                          }}
+                          onLoadStart={() => {
+                            console.log(
+                              "Media loading started:",
+                              word.audioUrl
+                            );
+                          }}
+                          onCanPlay={() => {
+                            console.log("Media can play:", word.audioUrl);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="mb-8">
                     <Skeleton height="h-12" width="w-32" />
@@ -653,85 +648,6 @@ const WordDetails: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Media Preview Dialog */}
-      <Dialog
-        open={!!selectedMedia}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedMedia(null);
-          }
-        }}
-      >
-        <DialogContent className="max-w-lg" showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>Word: {selectedMedia?.filename}</DialogTitle>
-          </DialogHeader>
-          {selectedMedia && (
-            <div className="mt-4">
-              {/* Analytical and Humes Text */}
-              <div className="mb-4 space-y-2">
-                {selectedMedia.analytical && (
-                  <div>
-                    <span className="font-semibold text-gray-700 text-sm">
-                      Analytical:
-                    </span>
-                    <p className="text-gray-600 text-sm mt-1">
-                      {selectedMedia.analytical}
-                    </p>
-                  </div>
-                )}
-                {selectedMedia.humes && (
-                  <div>
-                    <span className="font-semibold text-gray-700 text-sm">
-                      Humes:
-                    </span>
-                    <p className="text-gray-600 text-sm mt-1">
-                      {selectedMedia.humes}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <MediaLoader
-                src={selectedMedia.url}
-                type={selectedMedia.type}
-                autoPlay
-                onError={(error) => {
-                  console.error("Media load error:", error);
-                }}
-                onLoadStart={() => {
-                  console.log("Media loading started:", selectedMedia.url);
-                }}
-                onCanPlay={() => {
-                  console.log("Media can play:", selectedMedia.url);
-                }}
-              />
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              type="button"
-              className="text-white px-4 py-2 rounded"
-              style={{
-                backgroundColor: "rgb(211, 25, 28)",
-                borderColor: "rgb(211, 25, 28)",
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "rgb(191, 17, 20)";
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "rgb(211, 25, 28)";
-              }}
-              onClick={() => setSelectedMedia(null)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
