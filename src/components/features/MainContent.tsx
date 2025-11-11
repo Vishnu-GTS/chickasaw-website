@@ -257,7 +257,11 @@ const MainContent: React.FC = () => {
                               {/* Analytical translation - smaller, gray */}
                               <div className="break-all text-lg">
                                 <span className="text-gray-900 font-medium">
-                                  {subCategory.chickasawAnalytical}
+                                  <span
+                                    dangerouslySetInnerHTML={{
+                                      __html: subCategory.chickasawAnalytical,
+                                    }}
+                                  ></span>
                                 </span>
                               </div>
 
@@ -265,7 +269,11 @@ const MainContent: React.FC = () => {
                               {subCategory.language !== "-" && (
                                 <div className="break-all text-base">
                                   <span className="text-gray-500">
-                                    {subCategory.language}
+                                    <span
+                                      dangerouslySetInnerHTML={{
+                                        __html: subCategory.language,
+                                      }}
+                                    ></span>
                                   </span>
                                 </div>
                               )}
@@ -311,12 +319,18 @@ const MainContent: React.FC = () => {
                           <div className="text-gray-800 font-medium text-sm break-word pl-2">
                             {subCategory.name}
                           </div>
-                          <div className="text-gray-700  break-word text-sm">
-                            {subCategory.chickasawAnalytical}
-                          </div>
-                          <div className="text-gray-700 break-word text-sm">
-                            {subCategory.language}
-                          </div>
+                          <div
+                            className="text-gray-700  break-word text-sm"
+                            dangerouslySetInnerHTML={{
+                              __html: subCategory.chickasawAnalytical,
+                            }}
+                          />
+                          <div
+                            className="text-gray-700 break-word text-sm"
+                            dangerouslySetInnerHTML={{
+                              __html: subCategory.language,
+                            }}
+                          />
                           <div className="flex justify-center">
                             <Button
                               size="icon"
