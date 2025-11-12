@@ -13,6 +13,10 @@ import {
   addToSearchHistory,
   type SearchHistoryItem,
 } from "@/lib/cookies";
+import {
+  normalizeChickasawHTML,
+  normalizeChickasawText,
+} from "@/utils/textNormalizer";
 import heroBg from "@/assets/hero_bg.png";
 import type { AdvancedSearchResult, SubCategory } from "@/types";
 
@@ -60,9 +64,7 @@ const WordDetails: React.FC = () => {
         setError(null);
 
         // Use word name from URL
-        const displayWordName = wordName
-          ? decodeURIComponent(wordName)
-          : "Word";
+        const displayWordName = wordName ? wordName : "Word";
 
         // Try to get word details from API
         try {
@@ -517,7 +519,7 @@ const WordDetails: React.FC = () => {
                 </div>
 
                 {/* Play Button Skeleton */}
-                <div className="mb-8"> 
+                <div className="mb-8">
                   <Skeleton height="h-12" width="w-32" />
                 </div>
 
@@ -544,8 +546,8 @@ const WordDetails: React.FC = () => {
                       Analytical:
                     </span>
                     {word?.chickasawAnalytical ? (
-                      <span className="text-lg text-black font-medium">
-                        {word.chickasawAnalytical}
+                      <span className="text-lg text-black font-medium chickasaw-text">
+                        {normalizeChickasawText(word.chickasawAnalytical)}
                       </span>
                     ) : (
                       <Skeleton height="h-6" width="w-32" />
@@ -557,8 +559,13 @@ const WordDetails: React.FC = () => {
                       Humes:
                     </span>
                     {word?.language ? (
-                      <span className="text-lg text-black font-medium">
-                        {word.language}
+                      <span
+                        className="text-lg text-black font-medium chickasaw-text"
+                        dangerouslySetInnerHTML={{
+                          __html: normalizeChickasawHTML(word.language),
+                        }}
+                      >
+                        {/* {word.language} */}
                       </span>
                     ) : (
                       <Skeleton height="h-6" width="w-28" />

@@ -6,6 +6,10 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import { SkeletonTableRow } from "@/components/ui/skeleton";
 import MediaLoader from "@/components/ui/media-loader";
 import { categoryService } from "@/services/api";
+import {
+  normalizeChickasawHTML,
+  normalizeChickasawText,
+} from "@/utils/textNormalizer";
 import type { AdvancedSearchResult, SubCategory } from "@/types";
 import heroBg from "@/assets/hero_bg.png";
 
@@ -205,16 +209,16 @@ const CategoryPage: React.FC = () => {
 
                           {/* Analytical translation - smaller, gray */}
                           <div className="break-all text-lg">
-                            <span className="text-gray-900 font-medium">
-                              {item.chickasawAnalytical}
+                            <span className="text-gray-900 font-medium chickasaw-text">
+                              {normalizeChickasawText(item.chickasawAnalytical)}
                             </span>
                           </div>
 
                           {/* Humes translation */}
                           {item.language !== "-" && (
                             <div className="break-all text-base">
-                              <span className="text-gray-500">
-                                {item.language}
+                              <span className="text-gray-500 chickasaw-text">
+                                {normalizeChickasawText(item.language)}
                               </span>
                             </div>
                           )}
@@ -261,10 +265,22 @@ const CategoryPage: React.FC = () => {
                         {item.name}
                       </div>
                       <div className="text-gray-700 break-word text-sm">
-                        {item.chickasawAnalytical}
+                        <span
+                          className="chickasaw-text"
+                          dangerouslySetInnerHTML={{
+                            __html: normalizeChickasawHTML(
+                              item.chickasawAnalytical
+                            ),
+                          }}
+                        ></span>
                       </div>
                       <div className="text-gray-700 break-word text-sm">
-                        {item.language}
+                        <span
+                          className="chickasaw-text"
+                          dangerouslySetInnerHTML={{
+                            __html: normalizeChickasawHTML(item.language),
+                          }}
+                        ></span>
                       </div>
                       <div className="flex justify-center">
                         <Button

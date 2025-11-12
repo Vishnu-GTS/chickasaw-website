@@ -9,6 +9,7 @@ import MediaLoader from "@/components/ui/media-loader";
 import { categoryService } from "@/services/api";
 import { useCategories } from "@/contexts/CategoriesContext";
 import SplashScreen from "./SplashScreen";
+import { normalizeChickasawHTML } from "@/utils/textNormalizer";
 import type { SubCategory } from "@/types";
 
 const MainContent: React.FC = () => {
@@ -258,8 +259,11 @@ const MainContent: React.FC = () => {
                               <div className="break-all text-lg">
                                 <span className="text-gray-900 font-medium">
                                   <span
+                                    className="chickasaw-text"
                                     dangerouslySetInnerHTML={{
-                                      __html: subCategory.chickasawAnalytical,
+                                      __html: normalizeChickasawHTML(
+                                        subCategory.chickasawAnalytical
+                                      ),
                                     }}
                                   ></span>
                                 </span>
@@ -270,8 +274,11 @@ const MainContent: React.FC = () => {
                                 <div className="break-all text-base">
                                   <span className="text-gray-500">
                                     <span
+                                      className="chickasaw-text"
                                       dangerouslySetInnerHTML={{
-                                        __html: subCategory.language,
+                                        __html: normalizeChickasawHTML(
+                                          subCategory.language
+                                        ),
                                       }}
                                     ></span>
                                   </span>
@@ -313,22 +320,30 @@ const MainContent: React.FC = () => {
 
                         {/* Desktop Layout - Original simple format */}
                         <div
-                          onClick={() => navigate(`/word/${subCategory.name}`)}
+                          onClick={() =>
+                            navigate(
+                              `/word/${encodeURIComponent(subCategory.name)}`
+                            )
+                          }
                           className="hidden sm:grid grid-cols-4  items-center gap-4 py-2 px-2 lg:px-6 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
                         >
                           <div className="text-gray-800 font-medium text-sm break-word pl-2">
                             {subCategory.name}
                           </div>
                           <div
-                            className="text-gray-700  break-word text-sm"
+                            className="text-gray-700 break-word text-sm chickasaw-text"
                             dangerouslySetInnerHTML={{
-                              __html: subCategory.chickasawAnalytical,
+                              __html: normalizeChickasawHTML(
+                                subCategory.chickasawAnalytical
+                              ),
                             }}
                           />
                           <div
-                            className="text-gray-700 break-word text-sm"
+                            className="text-gray-700 break-word text-sm chickasaw-text"
                             dangerouslySetInnerHTML={{
-                              __html: subCategory.language,
+                              __html: normalizeChickasawHTML(
+                                subCategory.language
+                              ),
                             }}
                           />
                           <div className="flex justify-center">
