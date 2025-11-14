@@ -75,6 +75,9 @@ const MainContent: React.FC = () => {
     setExpandedRowId(expandedRowId === subCategoryId ? null : subCategoryId);
   };
 
+  console.log("sub categories", subCategories);
+  
+
   return (
     <div className="bg-white  min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -214,22 +217,175 @@ const MainContent: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Desktop Table Header - Hidden on mobile */}
-                <div className="hidden sm:grid grid-cols-4  px-2 lg:px-6 gap-4 pb-3 border-b border-gray-200 ">
-                  <div className="font-semibold text-gray-700 text-sm pl-2">
-                    Title
+                {/* Desktop Table - Single grid container for consistent column widths */}
+                <div className="hidden sm:block">
+                  <div
+                    className="grid px-2 items-center"
+                    style={{ gridTemplateColumns: "auto auto auto auto" }}
+                  >
+                    {/* Desktop Table Header */}
+                    <div className="font-semibold text-gray-700 text-sm pl-2 h-10 items-center flex border-b border-gray-200">
+                      Title
+                    </div>
+                    <div className="font-semibold text-gray-700 text-sm h-10 items-center flex border-b border-gray-200">
+                      Analytical
+                    </div>
+                    <div className="font-semibold text-gray-700 text-sm h-10 items-center flex border-b border-gray-200">
+                      Humes
+                    </div>
+                    <div className="font-semibold text-gray-700 text-sm h-10 items-center flex border-b border-gray-200"></div>
+
+                    {/* Table Content */}
+                    {subCategoriesLoading ? (
+                      <>
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <React.Fragment key={index}>
+                            <div className="py-2">
+                              <Skeleton height="h-4" width="w-3/4" />
+                            </div>
+                            <div className="py-2">
+                              <Skeleton height="h-4" width="w-full" />
+                            </div>
+                            <div className="py-2 pl-4">
+                              <Skeleton height="h-4" width="w-3/4" />
+                            </div>
+                            <div className="py-2 flex justify-center">
+                              <Skeleton height="h-8" width="w-8" />
+                            </div>
+                          </React.Fragment>
+                        ))}
+                        <div className="col-span-4 flex items-center justify-center py-4">
+                          <LoadingSpinner size="sm" text="Loading words..." />
+                        </div>
+                      </>
+                    ) : subCategories.length > 0 ? (
+                      subCategories.flatMap((subCategory) => {
+                        const rowItems = [
+                          <div
+                            key={`${subCategory._id}-title`}
+                            onClick={() =>
+                              navigate(
+                                `/word/${encodeURIComponent(subCategory.name)}?category=${encodeURIComponent(subCategory.category.name)}`
+                              )
+                            }
+                            className="text-gray-800 font-medium text-base break-word px-2 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                          >
+                            {subCategory.name}
+                          </div>,
+                          <div
+                            key={`${subCategory._id}-analytical`}
+                            onClick={() =>
+                              navigate(
+                                `/word/${encodeURIComponent(subCategory.name)}?category=${encodeURIComponent(subCategory.category.name)}`
+                              )
+                            }
+                            className="text-gray-700 break-word text-base chickasaw-text  px-2 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                            dangerouslySetInnerHTML={{
+                              __html: normalizeChickasawHTML(
+                                subCategory.chickasawAnalytical
+                              ),
+                            }}
+                          />,
+                          <div
+                            key={`${subCategory._id}-humes`}
+                            onClick={() =>
+                              navigate(
+                                `/word/${encodeURIComponent(subCategory.name)}?category=${encodeURIComponent(subCategory.category.name)}`
+                              )
+                            }
+                            className="text-gray-700 break-word text-base chickasaw-text px-2 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                            dangerouslySetInnerHTML={{
+                              __html: normalizeChickasawHTML(
+                                subCategory.language
+                              ),
+                            }}
+                          />,
+                          <div
+                            key={`${subCategory._id}-audio`}
+                            className="flex justify-center items-center py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleRow(subCategory._id);
+                            }}
+                          >
+                            <Button
+                              size="icon"
+                              className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
+                              style={{
+                                backgroundColor: "#F7F7F7",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.stopPropagation();
+                                (
+                                  e.target as HTMLButtonElement
+                                ).style.backgroundColor = "#F9FAFB";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.stopPropagation();
+                                (
+                                  e.target as HTMLButtonElement
+                                ).style.backgroundColor = "#F7F7F7";
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleRow(subCategory._id);
+                              }}
+                            >
+                              <Play
+                                className="w-4 h-4 ml-0.5 fill-current"
+                                style={{ color: "#CC0000" }}
+                              />
+                            </Button>
+                          </div>,
+                        ];
+
+                        // Add expanded media player row if this row is expanded
+                        if (expandedRowId === subCategory._id) {
+                          rowItems.push(
+                            <div
+                              key={`${subCategory._id}-expanded`}
+                              className="col-span-4 bg-gray-50 p-2 border-b border-gray-100"
+                            >
+                              <div className="space-y-3">
+                                <MediaLoader
+                                  src={subCategory.audioUrl}
+                                  type="audio"
+                                  autoPlay
+                                  onError={(error) => {
+                                    console.error("Media load error:", error);
+                                  }}
+                                  onLoadStart={() => {
+                                    console.log(
+                                      "Media loading started:",
+                                      subCategory.audioUrl
+                                    );
+                                  }}
+                                  onCanPlay={() => {
+                                    console.log(
+                                      "Media can play:",
+                                      subCategory.audioUrl
+                                    );
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return rowItems;
+                      })
+                    ) : (
+                      <div className="col-span-4 text-center py-8">
+                        <p className="text-gray-500 text-sm">
+                          No words found for this category.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="font-semibold text-gray-700 text-sm">
-                    Analytical
-                  </div>
-                  <div className="font-semibold text-gray-700 text-sm">
-                    Humes
-                  </div>
-                  <div className="font-semibold text-gray-700 text-sm"></div>
                 </div>
 
-                {/* Table Content */}
-                <div className="space-y-2 sm:space-y-0">
+                {/* Mobile Layout */}
+                <div className="space-y-2 sm:hidden">
                   {subCategoriesLoading ? (
                     <div className="space-y-2">
                       {/* Show skeleton rows while loading */}
@@ -245,8 +401,8 @@ const MainContent: React.FC = () => {
                       <React.Fragment key={subCategory._id}>
                         {/* Mobile Layout */}
                         <div
-                          className="sm:hidden py-3.5 px-4 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                          onClick={() => navigate(`/word/${subCategory.name}`)}
+                          className="py-3.5 px-4 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                          onClick={() => navigate(`/word/${subCategory.name}?category=${encodeURIComponent(subCategory.category.name)}`)}
                         >
                           <div className="flex items-center gap-2 justify-between">
                             <div className="flex-1 space-y-0.5 min-w-0">
@@ -315,66 +471,6 @@ const MainContent: React.FC = () => {
                                 />
                               </Button>
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Desktop Layout - Original simple format */}
-                        <div
-                          onClick={() =>
-                            navigate(
-                              `/word/${encodeURIComponent(subCategory.name)}`
-                            )
-                          }
-                          className="hidden sm:grid grid-cols-4  items-center gap-4 py-2 px-2 lg:px-6 border-b mb-0 border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          <div className="text-gray-800 font-medium text-sm break-word pl-2">
-                            {subCategory.name}
-                          </div>
-                          <div
-                            className="text-gray-700 break-word text-sm chickasaw-text"
-                            dangerouslySetInnerHTML={{
-                              __html: normalizeChickasawHTML(
-                                subCategory.chickasawAnalytical
-                              ),
-                            }}
-                          />
-                          <div
-                            className="text-gray-700 break-word text-sm chickasaw-text"
-                            dangerouslySetInnerHTML={{
-                              __html: normalizeChickasawHTML(
-                                subCategory.language
-                              ),
-                            }}
-                          />
-                          <div className="flex justify-center">
-                            <Button
-                              size="icon"
-                              className="w-8 h-8 rounded-full transition-colors border-0 shadow-none"
-                              style={{
-                                backgroundColor: "#F7F7F7",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.stopPropagation();
-                                (
-                                  e.target as HTMLButtonElement
-                                ).style.backgroundColor = "#F9FAFB";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.stopPropagation();
-                                (
-                                  e.target as HTMLButtonElement
-                                ).style.backgroundColor = "#F7F7F7";
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleRow(subCategory._id);
-                              }}
-                            >
-                              <Play
-                                className="w-4 h-4 ml-0.5 fill-current"
-                                style={{ color: "#CC0000" }}
-                              />
-                            </Button>
                           </div>
                         </div>
 

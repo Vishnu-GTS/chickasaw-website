@@ -145,9 +145,10 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                         Category: {word.category?.name}
                       </div>
                     )}
-                    <div className="text-[#666666]">
-                      {word.chickasawAnalytical}
-                    </div>
+                    <div className="text-[#666666]" >
+                      <div className="text-[#666666]" dangerouslySetInnerHTML={{ __html: word.chickasawAnalytical }}></div>
+                      {word.language !== "-" &&  <div className="text-[#666666]" dangerouslySetInnerHTML={{ __html: word.language }}></div>}
+                    </div>  
                   </div>
                   {audioUrl && (
                     <Button

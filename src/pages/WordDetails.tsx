@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,8 @@ const WordDetails: React.FC = () => {
   const { wordName } = useParams<{
     wordName: string;
   }>();
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get("category");
   const navigate = useNavigate();
 
   // State management
@@ -315,7 +317,7 @@ const WordDetails: React.FC = () => {
         navigate(`/category/${word._id}/${encodedCategoryName}`);
       } else {
         const encodedWordName = encodeURIComponent(word.name);
-        navigate(`/word/${encodedWordName}`);
+        navigate(`/word/${encodedWordName}?category=${encodeURIComponent(word.category.name)}`);
       }
     },
     [navigate]
@@ -394,7 +396,7 @@ const WordDetails: React.FC = () => {
     } else {
       // Navigate to word details page
       const encodedWordName = encodeURIComponent(item.name);
-      navigate(`/word/${encodedWordName}`);
+      navigate(`/word/${encodedWordName}?category=${encodeURIComponent(item.category?.name || "")}`);
     }
   };
 
@@ -490,7 +492,7 @@ const WordDetails: React.FC = () => {
           <Button
             variant="ghost"
             onClick={handleBackToHome}
-            className="flex items-center text-sm font-medium mb-8 transition-colors duration-200 hover:underline"
+            className="flex items-center text-base  font-bold mb-8 transition-colors duration-200 hover:underline"
             style={{ color: "#D3191C" }}
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
@@ -533,6 +535,11 @@ const WordDetails: React.FC = () => {
             <>
               {/* Current Word Title */}
               <div className=" mb-4">
+                {category && (
+                  <p className="text-lg text-black  mb-2">
+                   <strong> Category:</strong> {decodeURIComponent(category)}
+                  </p>
+                )}
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                   {word?.name || "Word"}
                 </h2>

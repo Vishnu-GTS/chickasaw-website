@@ -114,7 +114,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     } else {
       // Encode the word name for URL
       const encodedWordName = encodeURIComponent(word.name);
-      navigate(`/word/${encodedWordName}`);
+      navigate(`/word/${encodedWordName}?category=${encodeURIComponent(word.category.name)}`);
     }
   };
 
@@ -290,8 +290,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                     <span className="font-semibold text-gray-700 text-sm">
                       Analytical:
                     </span>
-                    <p className="text-gray-600 text-sm mt-1">
-                      {selectedMedia.analytical}
+                    <p className="text-gray-600 text-sm mt-1" dangerouslySetInnerHTML={{ __html: selectedMedia.analytical }}>
                     </p>
                   </div>
                 )}
@@ -300,8 +299,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                     <span className="font-semibold text-gray-700 text-sm">
                       Humes:
                     </span>
-                    <p className="text-gray-600 text-sm mt-1">
-                      {selectedMedia.humes}
+                    <p className="text-gray-600 text-sm mt-1" dangerouslySetInnerHTML={{ __html: selectedMedia.humes }}>
                     </p>
                   </div>
                 )}
