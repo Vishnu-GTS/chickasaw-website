@@ -86,7 +86,7 @@ const WordDetails: React.FC = () => {
               name: displayWordName, // Keep name from URL
               chickasawAnalytical: wordResult.chickasawAnalytical || "",
               language: wordResult.language || "",
-              audioUrl: wordResult.mediaUrl || "",
+              audioUrl: wordResult.audio?.url || "",
               videoUrl: wordResult.video?.url || null,
               category: wordResult.category,
               mediaType: wordResult.mediaType || "",
@@ -317,7 +317,11 @@ const WordDetails: React.FC = () => {
         navigate(`/category/${word._id}/${encodedCategoryName}`);
       } else {
         const encodedWordName = encodeURIComponent(word.name);
-        navigate(`/word/${encodedWordName}?category=${encodeURIComponent(word.category.name)}`);
+        navigate(
+          `/word/${encodedWordName}?category=${encodeURIComponent(
+            word.category.name
+          )}`
+        );
       }
     },
     [navigate]
@@ -396,7 +400,11 @@ const WordDetails: React.FC = () => {
     } else {
       // Navigate to word details page
       const encodedWordName = encodeURIComponent(item.name);
-      navigate(`/word/${encodedWordName}?category=${encodeURIComponent(item.category?.name || "")}`);
+      navigate(
+        `/word/${encodedWordName}?category=${encodeURIComponent(
+          item.category?.name || ""
+        )}`
+      );
     }
   };
 
@@ -537,7 +545,7 @@ const WordDetails: React.FC = () => {
               <div className=" mb-4">
                 {category && (
                   <p className="text-lg text-black  mb-2">
-                   <strong> Category:</strong> {decodeURIComponent(category)}
+                    <strong> Category:</strong> {decodeURIComponent(category)}
                   </p>
                 )}
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -581,7 +589,7 @@ const WordDetails: React.FC = () => {
                 </div>
 
                 {/* Audio Play Button */}
-                {word?.audioUrl ? (
+                {word?.audioUrl || word?.videoUrl ? (
                   <>
                     <div className="mb-8">
                       <Button
@@ -622,11 +630,17 @@ const WordDetails: React.FC = () => {
                       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-8">
                         <MediaLoader
                           src={
-                            word.audioUrl.startsWith("http")
-                              ? word.audioUrl
-                              : `https://admin.anompa.com${word.audioUrl}`
+                            word.audioUrl
+                              ? word.audioUrl.startsWith("http")
+                                ? word.audioUrl
+                                : `https://admin.anompa.com${word.audioUrl}`
+                              : word.videoUrl
+                              ? word.videoUrl.startsWith("http")
+                                ? word.videoUrl
+                                : `https://admin.anompa.com${word.videoUrl}`
+                              : ""
                           }
-                          type="audio"
+                          type={word.audioUrl ? "audio" : "video"}
                           autoPlay
                           onError={(error) => {
                             console.error("Media load error:", error);
@@ -634,11 +648,14 @@ const WordDetails: React.FC = () => {
                           onLoadStart={() => {
                             console.log(
                               "Media loading started:",
-                              word.audioUrl
+                              word.audioUrl ?? word.videoUrl
                             );
                           }}
                           onCanPlay={() => {
-                            console.log("Media can play:", word.audioUrl);
+                            console.log(
+                              "Media can play:",
+                              word.audioUrl ?? word.videoUrl
+                            );
                           }}
                         />
                       </div>

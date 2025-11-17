@@ -145,7 +145,7 @@ const CategoryPage: React.FC = () => {
         <Button
           variant="ghost"
           onClick={handleBackToHome}
-          className="flex items-center text-base font-base mb-4 sm:mb-8 transition-colors duration-200 hover:underline"
+          className="flex items-center text-base font-semibold mb-4 sm:mb-8 transition-colors duration-200 hover:underline"
           style={{ color: "#D3191C" }}
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
@@ -285,8 +285,8 @@ const CategoryPage: React.FC = () => {
                         >
                           <div className="space-y-3">
                             <MediaLoader
-                              src={item.audioUrl}
-                              type="audio"
+                              src={item.audioUrl ?? item.videoUrl}
+                              type={item.audioUrl ? "audio" : "video"}
                               autoPlay
                               onError={(error) => {
                                 console.error("Media load error:", error);
@@ -294,11 +294,11 @@ const CategoryPage: React.FC = () => {
                               onLoadStart={() => {
                                 console.log(
                                   "Media loading started:",
-                                  item.audioUrl
+                                  item.audioUrl ?? item.videoUrl
                                 );
                               }}
                               onCanPlay={() => {
-                                console.log("Media can play:", item.audioUrl);
+                                console.log("Media can play:", item.audioUrl ?? item.videoUrl);
                               }}
                             />
                           </div>
@@ -417,8 +417,8 @@ const CategoryPage: React.FC = () => {
                         <div className="space-y-3">
                           {/* Media Player */}
                           <MediaLoader
-                            src={item.audioUrl}
-                            type="audio"
+                            src={item.audioUrl ?? item.videoUrl}
+                            type={item.audioUrl ? "audio" : "video"}
                             autoPlay
                             onError={(error) => {
                               console.error("Media load error:", error);
@@ -426,11 +426,11 @@ const CategoryPage: React.FC = () => {
                             onLoadStart={() => {
                               console.log(
                                 "Media loading started:",
-                                item.audioUrl
+                                item.audioUrl ?? item.videoUrl
                               );
                             }}
                             onCanPlay={() => {
-                              console.log("Media can play:", item.audioUrl);
+                              console.log("Media can play:", item.audioUrl ?? item.videoUrl );
                             }}
                           />
                         </div>

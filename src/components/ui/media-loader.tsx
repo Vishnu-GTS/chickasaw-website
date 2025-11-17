@@ -81,7 +81,7 @@ const MediaLoader: React.FC<MediaLoaderProps> = ({
           src={src}
           controls={controls}
           autoPlay={autoPlay}
-          className={`w-full ${
+          className={`w-full max-h-96 ${
             isLoading ? "opacity-0" : "opacity-100"
           } transition-opacity ${className}`}
           onLoadStart={handleLoadStart}

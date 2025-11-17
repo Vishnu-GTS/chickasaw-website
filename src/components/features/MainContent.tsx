@@ -348,8 +348,8 @@ const MainContent: React.FC = () => {
                             >
                               <div className="space-y-3">
                                 <MediaLoader
-                                  src={subCategory.audioUrl}
-                                  type="audio"
+                                  src={subCategory.audioUrl ??  subCategory.videoUrl}
+                                  type={subCategory.audioUrl ? "audio" : "video"}
                                   autoPlay
                                   onError={(error) => {
                                     console.error("Media load error:", error);
@@ -357,13 +357,13 @@ const MainContent: React.FC = () => {
                                   onLoadStart={() => {
                                     console.log(
                                       "Media loading started:",
-                                      subCategory.audioUrl
+                                      subCategory.audioUrl ?? subCategory.videoUrl
                                     );
                                   }}
                                   onCanPlay={() => {
                                     console.log(
                                       "Media can play:",
-                                      subCategory.audioUrl
+                                      subCategory.audioUrl ?? subCategory.videoUrl
                                     );
                                   }}
                                 />
@@ -480,8 +480,8 @@ const MainContent: React.FC = () => {
                             <div className="space-y-3">
                               {/* Media Player */}
                               <MediaLoader
-                                src={subCategory.audioUrl}
-                                type="audio"
+                                src={subCategory.audioUrl ?? subCategory.videoUrl }
+                                type={subCategory.audioUrl ? "audio" : "video"}
                                 autoPlay
                                 onError={(error) => {
                                   console.error("Media load error:", error);
@@ -489,13 +489,13 @@ const MainContent: React.FC = () => {
                                 onLoadStart={() => {
                                   console.log(
                                     "Media loading started:",
-                                    subCategory.audioUrl
+                                    subCategory.audioUrl ?? subCategory.videoUrl
                                   );
                                 }}
                                 onCanPlay={() => {
                                   console.log(
                                     "Media can play:",
-                                    subCategory.audioUrl
+                                    subCategory.audioUrl ?? subCategory.videoUrl
                                   );
                                 }}
                               />
