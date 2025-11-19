@@ -41,7 +41,8 @@ export interface SubCategory {
     updatedAt: string;
     __v: number;
     chickasawAnalytical: string;
-    audioUrl: string;
+    analyticalAudioUrl: string;
+    humesAudioUrl: string;
     videoUrl: string | null;
 }
 
@@ -96,6 +97,20 @@ export interface AdvancedSearchResult {
     name: string;
     language: string;
     chickasawAnalytical: string;
+    analyticalAudioUrl: string;
+    humesAudioUrl: string;
+    analyticalAudio: {
+        id: string;
+        filename: string;
+        contentType: string;
+        url: string;
+    };
+    humesAudio: {
+        id: string;
+        filename: string;
+        contentType: string;
+        url: string;
+    };
     category: {
         _id: string;
         name: string;

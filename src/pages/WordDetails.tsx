@@ -6,6 +6,13 @@ import { Input } from "@/components/ui/input";
 import Skeleton from "@/components/ui/skeleton";
 import MediaLoader from "@/components/ui/media-loader";
 import SearchResults from "../components/features/SearchResults";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import { searchService } from "@/services/api";
 import {
@@ -32,12 +39,21 @@ const WordDetails: React.FC = () => {
   const [word, setWord] = useState<SubCategory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showMediaPlayer, setShowMediaPlayer] = useState(false);
+  const [showAnalyticalPlayer, setShowAnalyticalPlayer] = useState(false);
+  const [showHumesPlayer, setShowHumesPlayer] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [apiResults, setApiResults] = useState<AdvancedSearchResult[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<SearchHistoryItem[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    type: "audio" | "video";
+    url: string;
+    filename: string;
+    analytical?: string;
+    humes?: string;
+  } | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   // Refs for optimization
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -45,88 +61,80 @@ const WordDetails: React.FC = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const searchAbortControllerRef = useRef<AbortController | null>(null);
   const isInitialLoad = useRef(true);
+  const lastSearchQueryRef = useRef<string>("");
 
   // Fetch word details
   useEffect(() => {
-    const fetchWordDetails = async () => {
-      if (!wordName || isFetchingWordDetails.current) return;
+    fetchWordDetails();
 
-      // Cancel any ongoing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+    // // Cleanup function
+    // return () => {
+    //   isFetchingWordDetails.current = false;
+    //   isInitialLoad.current = true;
+    //   if (abortControllerRef.current) {
+    //     abortControllerRef.current.abort();
+    //     abortControllerRef.current = null;
+    //   }
+    // };
+  }, []);
 
-      // Create new AbortController for this request
-      const abortController = new AbortController();
-      abortControllerRef.current = abortController;
+  const fetchWordDetails = async () => {
+    if (!wordName || isFetchingWordDetails.current) return;
 
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    try {
+      isFetchingWordDetails.current = true;
+      setLoading(true);
+      setError(null);
+
+      // Use word name from URL
+      const displayWordName = wordName ? wordName : "Word";
+
+      // Try to get word details from API
       try {
-        isFetchingWordDetails.current = true;
-        setLoading(true);
-        setError(null);
+        console.log("Fetching word details for:", wordName);
+        const response = await searchService.advancedSearch(
+          wordName,
+          "all",
+          abortController.signal
+        );
+        console.log("API response:", response);
 
-        // Use word name from URL
-        const displayWordName = wordName ? wordName : "Word";
-
-        // Try to get word details from API
-        try {
-          console.log("Fetching word details for:", wordName);
-          const response = await searchService.advancedSearch(
-            wordName,
-            "all",
-            abortController.signal
-          );
-          console.log("API response:", response);
-
-          if (response.success && response.data.results.length > 0) {
-            const wordResult = response.data.results[0];
-            // Use API data but keep the name from URL
-            const wordFromApi: SubCategory = {
-              _id: wordResult._id,
-              name: displayWordName, // Keep name from URL
-              chickasawAnalytical: wordResult.chickasawAnalytical || "",
-              language: wordResult.language || "",
-              audioUrl: wordResult.audio?.url || "",
-              videoUrl: wordResult.video?.url || null,
-              category: wordResult.category,
-              mediaType: wordResult.mediaType || "",
-              createdAt: wordResult.createdAt || "",
-              updatedAt: wordResult.updatedAt || "",
-              __v: wordResult.__v || 0,
-            };
-            setWord(wordFromApi);
-          } else {
-            // No API results found, create word with name from URL only
-            const wordFromUrl: SubCategory = {
-              _id: "",
-              name: displayWordName,
-              chickasawAnalytical: "",
-              language: "",
-              audioUrl: "",
-              videoUrl: "",
-              category: {
-                _id: "",
-                name: "",
-                createdAt: "",
-                updatedAt: "",
-                __v: 0,
-              },
-              mediaType: "",
-              createdAt: "",
-              updatedAt: "",
-              __v: 0,
-            };
-            setWord(wordFromUrl);
-          }
-        } catch (apiError) {
-          console.error("API call failed, showing word from URL:", apiError);
-          // API failed, but we still show the word name from URL
+        if (response.success && response.data.results.length > 0) {
+          const wordResult = response.data.results[0];
+          // Use API data but keep the name from URL
+          const wordFromApi: SubCategory = {
+            _id: wordResult._id,
+            name: displayWordName, // Keep name from URL
+            chickasawAnalytical: wordResult.chickasawAnalytical || "",
+            language: wordResult.language || "",
+            analyticalAudioUrl: wordResult.analyticalAudio?.url ,
+            humesAudioUrl: wordResult.humesAudio?.url,
+            videoUrl: wordResult.video?.url || null,
+            category: wordResult.category,
+            mediaType: wordResult.mediaType || "",
+            createdAt: wordResult.createdAt || "",
+            updatedAt: wordResult.updatedAt || "",
+            __v: wordResult.__v || 0,
+          };
+          setWord(wordFromApi);
+        } else {
+          // No API results found, create word with name from URL only
           const wordFromUrl: SubCategory = {
             _id: "",
             name: displayWordName,
             chickasawAnalytical: "",
             language: "",
-            audioUrl: "",
+            analyticalAudioUrl: "",
+            humesAudioUrl: "",
             videoUrl: "",
             category: {
               _id: "",
@@ -141,84 +149,142 @@ const WordDetails: React.FC = () => {
             __v: 0,
           };
           setWord(wordFromUrl);
-          // Don't set error state for API failures - just show the word name
-          console.log("Showing word from URL without API data");
         }
-      } catch (err) {
-        if (err instanceof Error && err.name !== "AbortError") {
-          console.error("Error fetching word details:", err);
-
-          // Even if there's an error, try to show the word name from URL
-          const wordFromUrl: SubCategory = {
+      } catch (apiError) {
+        console.error("API call failed, showing word from URL:", apiError);
+        // API failed, but we still show the word name from URL
+        const wordFromUrl: SubCategory = {
+          _id: "",
+          name: displayWordName,
+          chickasawAnalytical: "",
+          language: "",
+          analyticalAudioUrl: "",
+          humesAudioUrl: "",
+          videoUrl: "",
+          category: {
             _id: "",
-            name: wordName ? decodeURIComponent(wordName) : "Word",
-            chickasawAnalytical: "",
-            language: "",
-            audioUrl: "",
-            videoUrl: "",
-            category: {
-              _id: "",
-              name: "",
-              createdAt: "",
-              updatedAt: "",
-              __v: 0,
-            },
-            mediaType: "",
+            name: "",
             createdAt: "",
             updatedAt: "",
             __v: 0,
-          };
-          setWord(wordFromUrl);
+          },
+          mediaType: "",
+          createdAt: "",
+          updatedAt: "",
+          __v: 0,
+        };
+        setWord(wordFromUrl);
+        // Don't set error state for API failures - just show the word name
+        console.log("Showing word from URL without API data");
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name !== "AbortError") {
+        console.error("Error fetching word details:", err);
 
-          // Only set error for critical failures
-          if (
-            err.message.includes("Network Error") ||
-            err.message.includes("timeout")
-          ) {
-            setError(
-              "Network error. Please check your connection and try again."
-            );
-          } else if (err.message.includes("404")) {
-            setError("Word not found. Please try a different word.");
-          } else if (err.message.includes("500")) {
-            setError("Server error. Please try again later.");
-          } else {
-            // For other errors, just log them but don't show error to user
-            console.warn(
-              "Non-critical error, showing word without full details:",
-              err.message
-            );
-          }
+        // Even if there's an error, try to show the word name from URL
+        const wordFromUrl: SubCategory = {
+          _id: "",
+          name: wordName ? decodeURIComponent(wordName) : "Word",
+          chickasawAnalytical: "",
+          language: "",
+          analyticalAudioUrl: "",
+          humesAudioUrl: "",
+          videoUrl: "",
+          category: {
+            _id: "",
+            name: "",
+            createdAt: "",
+            updatedAt: "",
+            __v: 0,
+          },
+          mediaType: "",
+          createdAt: "",
+          updatedAt: "",
+          __v: 0,
+        };
+        setWord(wordFromUrl);
+
+        // Only set error for critical failures
+        if (
+          err.message.includes("Network Error") ||
+          err.message.includes("timeout")
+        ) {
+          setError(
+            "Network error. Please check your connection and try again."
+          );
+        } else if (err.message.includes("404")) {
+          setError("Word not found. Please try a different word.");
+        } else if (err.message.includes("500")) {
+          setError("Server error. Please try again later.");
+        } else {
+          // For other errors, just log them but don't show error to user
+          console.warn(
+            "Non-critical error, showing word without full details:",
+            err.message
+          );
         }
-      } finally {
-        setLoading(false);
-        isFetchingWordDetails.current = false;
-        isInitialLoad.current = false;
       }
-    };
-
-    fetchWordDetails();
-
-    // Cleanup function
-    return () => {
+    } finally {
+      setLoading(false);
       isFetchingWordDetails.current = false;
-      isInitialLoad.current = true;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-    };
-  }, [wordName]);
-
-  const handleAudioPlay = () => {
-    setShowMediaPlayer(!showMediaPlayer);
+      isInitialLoad.current = false;
+    }
   };
+
+  const handleAnalyticalPlay = () => {
+    const newValue = !showAnalyticalPlayer;
+    setShowAnalyticalPlayer(newValue);
+    // Hide Humes player when showing Analytical player
+    if (newValue) {
+      setShowHumesPlayer(false);
+    }
+  };
+
+  const handleHumesPlay = () => {
+    const newValue = !showHumesPlayer;
+    setShowHumesPlayer(newValue);
+    // Hide Analytical player when showing Humes player
+    if (newValue) {
+      setShowAnalyticalPlayer(false);
+    }
+  };
+
+  const handleSearchResultAudioPlay = useCallback(
+    (
+      audioUrl: string,
+      filename: string,
+      analytical?: string,
+      humes?: string
+    ) => {
+      console.log("audioUrl", audioUrl);
+      // Construct full URL if it's a relative path
+      const fullUrl = audioUrl.startsWith("http")
+        ? audioUrl
+        : `https://admin.anompa.com${audioUrl}`;
+
+      setSelectedMedia({
+        type: "audio",
+        url: fullUrl,
+        filename: filename,
+        analytical,
+        humes,
+      });
+      setAudioError(null); // Clear any previous errors
+    },
+    []
+  );
 
   // Perform API search
   const performApiSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setApiResults([]);
       setIsSearchLoading(false);
+      lastSearchQueryRef.current = "";
+      return;
+    }
+
+    // Prevent duplicate calls for the same query
+    if (lastSearchQueryRef.current === query.trim()) {
       return;
     }
 
@@ -230,6 +296,9 @@ const WordDetails: React.FC = () => {
     // Create new AbortController for this search request
     const searchAbortController = new AbortController();
     searchAbortControllerRef.current = searchAbortController;
+
+    // Mark this query as being searched
+    lastSearchQueryRef.current = query.trim();
 
     setIsSearchLoading(true);
     try {
@@ -248,6 +317,8 @@ const WordDetails: React.FC = () => {
       if (error instanceof Error && error.name !== "AbortError") {
         console.error("Error performing API search:", error);
         setApiResults([]);
+        // Reset the last search query on error so it can be retried
+        lastSearchQueryRef.current = "";
       }
     } finally {
       setIsSearchLoading(false);
@@ -261,6 +332,15 @@ const WordDetails: React.FC = () => {
   useEffect(() => {
     // Don't perform search if we're still loading word details, if there's no search query, or if this is the initial load
     if (loading || !searchQuery.trim() || isInitialLoad.current) {
+      // Reset last search query if search is cleared
+      if (!searchQuery.trim()) {
+        lastSearchQueryRef.current = "";
+      }
+      return;
+    }
+
+    // Prevent duplicate calls for the same query
+    if (lastSearchQueryRef.current === searchQuery.trim()) {
       return;
     }
 
@@ -351,6 +431,7 @@ const WordDetails: React.FC = () => {
     setShowResults(false);
     setApiResults([]);
     setIsSearchLoading(false);
+    lastSearchQueryRef.current = ""; // Reset last search query
     // Focus back to the search input after clearing
     if (searchInputRef.current) {
       searchInputRef.current.focus();
@@ -446,7 +527,7 @@ const WordDetails: React.FC = () => {
               results={searchResults}
               isVisible={showResults}
               onResultClick={handleResultClick}
-              onAudioPlay={() => {}}
+              onAudioPlay={handleSearchResultAudioPlay}
               searchQuery={searchQuery}
               searchInputRef={searchInputRef}
               isLoading={isSearchLoading}
@@ -529,8 +610,9 @@ const WordDetails: React.FC = () => {
                 </div>
 
                 {/* Play Button Skeleton */}
-                <div className="mb-8">
-                  <Skeleton height="h-12" width="w-32" />
+                <div className="mb-8 flex gap-4">
+                  <Skeleton height="h-12" width="w-40" />
+                  <Skeleton height="h-12" width="w-40" />
                 </div>
 
                 {/* Note Skeleton */}
@@ -588,84 +670,171 @@ const WordDetails: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Audio Play Button */}
-                {word?.audioUrl || word?.videoUrl ? (
-                  <>
-                    <div className="mb-8">
-                      <Button
-                        onClick={handleAudioPlay}
-                        className="text-white px-10 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 hover:shadow-xl"
-                        style={{
-                          backgroundColor: "#CC0000",
-                          borderColor: "#CC0000",
-                        }}
-                        onMouseEnter={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = "#B30000";
-                          (e.target as HTMLButtonElement).style.transform =
-                            "translateY(-1px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          (
-                            e.target as HTMLButtonElement
-                          ).style.backgroundColor = "#CC0000";
-                          (e.target as HTMLButtonElement).style.transform =
-                            "translateY(0)";
-                        }}
+                {/* Audio Play Buttons */}
+                <div className="mb-8 flex flex-col sm:flex-row gap-4">
+                  {/* Analytical Audio Play Button */}
+                  {word?.analyticalAudioUrl ? (
+                    <Button
+                      onClick={handleAnalyticalPlay}
+                      className="text-white px-8 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 hover:shadow-xl"
+                      style={{
+                        backgroundColor: "#CC0000",
+                        borderColor: "#CC0000",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor =
+                          "#B30000";
+                        (e.target as HTMLButtonElement).style.transform =
+                          "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor =
+                          "#CC0000";
+                        (e.target as HTMLButtonElement).style.transform =
+                          "translateY(0)";
+                      }}
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
                       >
-                        <svg
-                          className="w-6 h-6"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                        </svg>
-                        {showMediaPlayer ? "Hide" : "Play"}
-                      </Button>
-                    </div>
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                      {showAnalyticalPlayer
+                        ? "Hide Analytical"
+                        : "Play Analytical"}
+                    </Button>
+                  ) : (
+                    <Skeleton height="h-12" width="w-40" />
+                  )}
 
-                    {/* Inline Media Player */}
-                    {showMediaPlayer && (
-                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-8">
-                        <MediaLoader
-                          src={
-                            word.audioUrl
-                              ? word.audioUrl.startsWith("http")
-                                ? word.audioUrl
-                                : `https://admin.anompa.com${word.audioUrl}`
-                              : word.videoUrl
-                              ? word.videoUrl.startsWith("http")
-                                ? word.videoUrl
-                                : `https://admin.anompa.com${word.videoUrl}`
-                              : ""
-                          }
-                          type={word.audioUrl ? "audio" : "video"}
-                          autoPlay
-                          onError={(error) => {
-                            console.error("Media load error:", error);
-                          }}
-                          onLoadStart={() => {
-                            console.log(
-                              "Media loading started:",
-                              word.audioUrl ?? word.videoUrl
-                            );
-                          }}
-                          onCanPlay={() => {
-                            console.log(
-                              "Media can play:",
-                              word.audioUrl ?? word.videoUrl
-                            );
-                          }}
-                        />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="mb-8">
-                    <Skeleton height="h-12" width="w-32" />
+                  {/* Humes Audio Play Button */}
+                  {word?.humesAudioUrl ? (
+                    <Button
+                      onClick={handleHumesPlay}
+                      className="text-white px-8 py-4 text-lg font-semibold rounded-lg transition-all duration-200 flex items-center gap-3 hover:shadow-xl"
+                      style={{
+                        backgroundColor: "#CC0000",
+                        borderColor: "#CC0000",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor =
+                          "#B30000";
+                        (e.target as HTMLButtonElement).style.transform =
+                          "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLButtonElement).style.backgroundColor =
+                          "#CC0000";
+                        (e.target as HTMLButtonElement).style.transform =
+                          "translateY(0)";
+                      }}
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                      </svg>
+                      {showHumesPlayer ? "Hide Humes" : "Play Humes"}
+                    </Button>
+                  ) : (
+                    <Skeleton height="h-12" width="w-40" />
+                  )}
+                </div>
+
+                {/* Inline Media Players */}
+                {showAnalyticalPlayer && word?.analyticalAudioUrl && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Analytical Audio
+                    </h3>
+                    <MediaLoader
+                      src={
+                        word.analyticalAudioUrl.startsWith("http")
+                          ? word.analyticalAudioUrl
+                          : `https://admin.anompa.com${word.analyticalAudioUrl}`
+                      }
+                      type="audio"
+                      autoPlay
+                      onError={(error) => {
+                        console.error("Analytical audio load error:", error);
+                      }}
+                      onLoadStart={() => {
+                        console.log(
+                          "Analytical audio loading started:",
+                          word.analyticalAudioUrl
+                        );
+                      }}
+                      onCanPlay={() => {
+                        console.log(
+                          "Analytical audio can play:",
+                          word.analyticalAudioUrl
+                        );
+                      }}
+                    />
                   </div>
                 )}
+
+                {showHumesPlayer && word?.humesAudioUrl && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-8">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Humes Audio
+                    </h3>
+                    <MediaLoader
+                      src={
+                        word.humesAudioUrl.startsWith("http")
+                          ? word.humesAudioUrl
+                          : `https://admin.anompa.com${word.humesAudioUrl}`
+                      }
+                      type="audio"
+                      autoPlay
+                      onError={(error) => {
+                        console.error("Humes audio load error:", error);
+                      }}
+                      onLoadStart={() => {
+                        console.log(
+                          "Humes audio loading started:",
+                          word.humesAudioUrl
+                        );
+                      }}
+                      onCanPlay={() => {
+                        console.log(
+                          "Humes audio can play:",
+                          word.humesAudioUrl
+                        );
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Video Player (if no audio but video exists) */}
+                {!word?.analyticalAudioUrl &&
+                  !word?.humesAudioUrl &&
+                  word?.videoUrl && (
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-8">
+                      <MediaLoader
+                        src={
+                          word.videoUrl.startsWith("http")
+                            ? word.videoUrl
+                            : `https://admin.anompa.com${word.videoUrl}`
+                        }
+                        type="video"
+                        autoPlay
+                        onError={(error) => {
+                          console.error("Video load error:", error);
+                        }}
+                        onLoadStart={() => {
+                          console.log("Video loading started:", word.videoUrl);
+                        }}
+                        onCanPlay={() => {
+                          console.log("Video can play:", word.videoUrl);
+                        }}
+                      />
+                    </div>
+                  )}
 
                 {/* Note */}
                 <div className="mt-8 p-4 bg-gray-50 rounded-lg border-l-4 border-gray-300">
@@ -679,6 +848,119 @@ const WordDetails: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Media Preview Dialog */}
+      <Dialog
+        open={!!selectedMedia}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedMedia(null);
+            setAudioError(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Word: {selectedMedia?.filename}</DialogTitle>
+          </DialogHeader>
+          {selectedMedia && (
+            <div className="mt-4">
+              {/* Analytical and Humes Text */}
+              <div className="mb-4 space-y-2">
+                {selectedMedia.analytical && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Analytical:
+                    </span>
+                    <p
+                      className="text-gray-600 text-sm mt-1"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedMedia.analytical,
+                      }}
+                    ></p>
+                  </div>
+                )}
+                {selectedMedia.humes && (
+                  <div>
+                    <span className="font-semibold text-gray-700 text-sm">
+                      Humes:
+                    </span>
+                    <p
+                      className="text-gray-600 text-sm mt-1"
+                      dangerouslySetInnerHTML={{ __html: selectedMedia.humes }}
+                    ></p>
+                  </div>
+                )}
+              </div>
+              {selectedMedia.type === "audio" ? (
+                audioError ? (
+                  <div className="text-red-600 text-center p-4">
+                    <p>Unable to load audio file</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      URL: {selectedMedia.url}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      This might be due to CORS restrictions or the file not
+                      being accessible.
+                    </p>
+                  </div>
+                ) : (
+                  <audio
+                    src={selectedMedia.url}
+                    controls
+                    autoPlay
+                    className="w-full"
+                    onError={(e) => {
+                      console.error("Audio load error:", e);
+                      setAudioError("Failed to load audio file");
+                    }}
+                    onLoadStart={() => {
+                      console.log("Audio loading started:", selectedMedia.url);
+                    }}
+                    onCanPlay={() => {
+                      console.log("Audio can play:", selectedMedia.url);
+                    }}
+                  />
+                )
+              ) : (
+                <video
+                  src={selectedMedia.url}
+                  controls
+                  autoPlay
+                  className="w-full"
+                  onError={(e) => {
+                    console.error("Video load error:", e);
+                  }}
+                />
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              className="text-white px-4 py-2 rounded"
+              style={{
+                backgroundColor: "rgb(211, 25, 28)",
+                borderColor: "rgb(211, 25, 28)",
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  "rgb(191, 17, 20)";
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  "rgb(211, 25, 28)";
+              }}
+              onClick={() => {
+                setSelectedMedia(null);
+                setAudioError(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -48,6 +48,20 @@ const CategoryPage: React.FC = () => {
           chickasawAnalytical: "",
           language: "",
           mediaUrl: "",
+          analyticalAudioUrl: "",
+          humesAudioUrl: "",
+          analyticalAudio: {
+            id: "",
+            filename: "",
+            contentType: "",
+            url: "",
+          },
+          humesAudio: {
+            id: "",
+            filename: "",
+            contentType: "",
+            url: "",
+          },
           category: {
             _id: categoryId,
             name: displayCategoryName,
@@ -92,7 +106,11 @@ const CategoryPage: React.FC = () => {
   const handleWordClick = (subCategory: SubCategory) => {
     // Encode the word name for URL
     const encodedWordName = encodeURIComponent(subCategory.name);
-    navigate(`/word/${encodedWordName}?category=${encodeURIComponent(subCategory.category.name)}`);
+    navigate(
+      `/word/${encodedWordName}?category=${encodeURIComponent(
+        subCategory.category.name
+      )}`
+    );
   };
 
   const handleBackToHome = () => {
@@ -285,8 +303,16 @@ const CategoryPage: React.FC = () => {
                         >
                           <div className="space-y-3">
                             <MediaLoader
-                              src={item.audioUrl ?? item.videoUrl}
-                              type={item.audioUrl ? "audio" : "video"}
+                              src={
+                                (item.analyticalAudioUrl ||
+                                  item.humesAudioUrl) ??
+                                item.videoUrl
+                              }
+                              type={
+                                item.analyticalAudioUrl || item.humesAudioUrl
+                                  ? "audio"
+                                  : "video"
+                              }
                               autoPlay
                               onError={(error) => {
                                 console.error("Media load error:", error);
@@ -294,11 +320,18 @@ const CategoryPage: React.FC = () => {
                               onLoadStart={() => {
                                 console.log(
                                   "Media loading started:",
-                                  item.audioUrl ?? item.videoUrl
+                                  (item.analyticalAudioUrl ||
+                                    item.humesAudioUrl) ??
+                                    item.videoUrl
                                 );
                               }}
                               onCanPlay={() => {
-                                console.log("Media can play:", item.audioUrl ?? item.videoUrl);
+                                console.log(
+                                  "Media can play:",
+                                  (item.analyticalAudioUrl ||
+                                    item.humesAudioUrl) ??
+                                    item.videoUrl
+                                );
                               }}
                             />
                           </div>
@@ -417,8 +450,15 @@ const CategoryPage: React.FC = () => {
                         <div className="space-y-3">
                           {/* Media Player */}
                           <MediaLoader
-                            src={item.audioUrl ?? item.videoUrl}
-                            type={item.audioUrl ? "audio" : "video"}
+                            src={
+                              (item.analyticalAudioUrl || item.humesAudioUrl) ??
+                              item.videoUrl
+                            }
+                            type={
+                              item.analyticalAudioUrl || item.humesAudioUrl
+                                ? "audio"
+                                : "video"
+                            }
                             autoPlay
                             onError={(error) => {
                               console.error("Media load error:", error);
@@ -426,11 +466,18 @@ const CategoryPage: React.FC = () => {
                             onLoadStart={() => {
                               console.log(
                                 "Media loading started:",
-                                item.audioUrl ?? item.videoUrl
+                                (item.analyticalAudioUrl ||
+                                  item.humesAudioUrl) ??
+                                  item.videoUrl
                               );
                             }}
                             onCanPlay={() => {
-                              console.log("Media can play:", item.audioUrl ?? item.videoUrl );
+                              console.log(
+                                "Media can play:",
+                                (item.analyticalAudioUrl ||
+                                  item.humesAudioUrl) ??
+                                  item.videoUrl
+                              );
                             }}
                           />
                         </div>

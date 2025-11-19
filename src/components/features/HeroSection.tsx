@@ -114,7 +114,11 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     } else {
       // Encode the word name for URL
       const encodedWordName = encodeURIComponent(word.name);
-      navigate(`/word/${encodedWordName}?category=${encodeURIComponent(word.category.name)}`);
+      navigate(
+        `/word/${encodedWordName}?category=${encodeURIComponent(
+          word.category.name
+        )}`
+      );
     }
   };
 
@@ -124,6 +128,7 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
     analytical?: string,
     humes?: string
   ) => {
+    console.log("audioUrl", audioUrl);
     // Construct full URL if it's a relative path
     const fullUrl = audioUrl.startsWith("http")
       ? audioUrl
@@ -290,8 +295,12 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                     <span className="font-semibold text-gray-700 text-sm">
                       Analytical:
                     </span>
-                    <p className="text-gray-600 text-sm mt-1" dangerouslySetInnerHTML={{ __html: selectedMedia.analytical }}>
-                    </p>
+                    <p
+                      className="text-gray-600 text-sm mt-1"
+                      dangerouslySetInnerHTML={{
+                        __html: selectedMedia.analytical,
+                      }}
+                    ></p>
                   </div>
                 )}
                 {selectedMedia.humes && (
@@ -299,8 +308,10 @@ const HeroSection: React.FC<HeroSectionProps> = () => {
                     <span className="font-semibold text-gray-700 text-sm">
                       Humes:
                     </span>
-                    <p className="text-gray-600 text-sm mt-1" dangerouslySetInnerHTML={{ __html: selectedMedia.humes }}>
-                    </p>
+                    <p
+                      className="text-gray-600 text-sm mt-1"
+                      dangerouslySetInnerHTML={{ __html: selectedMedia.humes }}
+                    ></p>
                   </div>
                 )}
               </div>

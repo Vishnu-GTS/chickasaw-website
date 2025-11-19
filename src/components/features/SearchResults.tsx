@@ -127,8 +127,10 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             </div>
           ) : results.length > 0 ? (
             results.slice(0, 10).map((word) => {
-              const audioUrl = word.mediaUrl;
-              const filename = word.audio?.filename || word.name;
+
+              // console.log("word", word.analyticalAudio.url);
+              const audioUrl = (word.analyticalAudio?.url || word.humesAudio?.url);
+              const filename = (word.analyticalAudio?.filename || word.humesAudio?.filename) ?? word.name;
 
               return (
                 <div
@@ -169,6 +171,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onAudioPlay && audioUrl) {
+                          console.log("audioUrl in search results", audioUrl);
                           onAudioPlay(
                             audioUrl,
                             filename,
