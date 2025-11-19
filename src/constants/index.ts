@@ -2,7 +2,7 @@
 
 // API Configuration
 export const API_CONFIG = {
-    BASE_URL: ' http://localhost:3000/api',
+    BASE_URL: 'https://admin.anompa.com/api/',
     TIMEOUT: 10000,
 } as const;
 
